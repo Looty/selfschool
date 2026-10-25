@@ -6,6 +6,12 @@
       "runtimeExecutable": "corepack",
       "runtimeArgs": ["pnpm", "--filter", "@selfschool/web", "dev:mock", "--port", "5174"],
       "port": 5174
+    },
+    {
+      "name": "local",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "@selfschool/local", "dev"],
+      "port": 5175
     }
   ]
 }

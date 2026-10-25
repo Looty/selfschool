@@ -51,7 +51,8 @@ describe("mock layer", () => {
     expect(Object.keys(INPUTS).sort()).toEqual(routeNames().sort());
   });
 
-  it("every handler returns data that validates against its shared schema", async () => {
+  // One call per route at ~80ms mock latency: close to the 5s default, and over it when other packages' tests run alongside.
+  it("every handler returns data that validates against its shared schema", { timeout: 30_000 }, async () => {
     for (const name of routeNames()) {
       const input = { ...INPUTS[name] };
       if (name === "examInstance") {

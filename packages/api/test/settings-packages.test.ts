@@ -1,7 +1,9 @@
 import { cpSync, existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { eq } from "drizzle-orm";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { packages } from "../src/db/schema.js";
 import type { GitRunner } from "../src/ctx.js";
 import { validateGitUrl, validateRef, validateSubpath } from "../src/packages.js";
 import { fixtureDir, setup } from "./helpers.js";
@@ -20,6 +22,49 @@ describe("settings", () => {
     expect((await h.get("/settings")).json.models.verify).toBe("opus");
     expect((await h.call("PUT", "/settings", { models: { chat: "gpt-9" } })).status).toBe(400);
     expect((await h.call("PUT", "/settings", {})).status).toBe(400);
+  });
+});
+
+describe("package updates", () => {
+  const mark = (h: ReturnType<typeof setup>, set: Partial<typeof packages.$inferInsert>) =>
+    h.db.update(packages).set(set).where(eq(packages.id, "mini")).run();
+  const SHA = "b".repeat(40);
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("says there is nothing to check for a course that did not come from GitHub", async () => {
+    const h = setup();
+    await h.get("/packages"); // registers the course folder as a package
+    const r = (await h.get("/packages/mini/updates")).json;
+    expect(r).toMatchObject({ status: "unknown", latestSha: null, branches: [], tags: [], ref: "local" });
+    expect(r.note).toMatch(/GitHub/);
+    expect((await h.get("/packages/nope/updates")).status).toBe(404);
+  });
+
+  it("reports an update when the ref moved, and the other branches and tags", async () => {
+    const h = setup();
+    await h.get("/packages");
+    mark(h, { url: "https://github.com/o/r", ref: "v1", sha: "a".repeat(40) });
+    vi.stubGlobal("fetch", async (url: string) =>
+      url.includes("/commits/") ? new Response(SHA)
+        : url.includes("/branches") ? Response.json([{ name: "main" }, { name: "v1.1" }])
+        : Response.json([{ name: "v1" }]),
+    );
+    const r = (await h.get("/packages/mini/updates")).json;
+    expect(r).toEqual({ ref: "v1", sha: "a".repeat(40), latestSha: SHA, status: "update_available", branches: ["main", "v1.1"], tags: ["v1"], note: null });
+
+    mark(h, { sha: SHA });
+    expect((await h.get("/packages/mini/updates")).json.status).toBe("up_to_date");
+  });
+
+  it("stays 'unknown' with a reason when GitHub cannot be reached", async () => {
+    const h = setup();
+    await h.get("/packages");
+    mark(h, { url: "https://github.com/o/r", ref: "main", sha: "a".repeat(40) });
+    vi.stubGlobal("fetch", async () => new Response("", { status: 403 }));
+    const r = (await h.get("/packages/mini/updates")).json;
+    expect(r.status).toBe("unknown");
+    expect(r.note).toMatch(/rate limit/);
   });
 });
 

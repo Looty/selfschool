@@ -51,7 +51,8 @@ import {
   startExam,
 } from "./exams.js";
 import { claimNextJob, enqueueJob, getJob, submitJobResult, type ResultHooks } from "./jobs.js";
-import { addPackage, addPackageZip, insideDir, listPackages, previewPackage, previewPackageZip, runGit, ZIP_LIMITS } from "./packages.js";
+import { withGithub } from "./githubGit.js";
+import { addPackage, addPackageZip, insideDir, listPackages, packageUpdates, previewPackage, previewPackageZip, runGit, ZIP_LIMITS } from "./packages.js";
 import { clearPartial, setPartial } from "./partials.js";
 import { listRemoved, removalSummary, removeCourse, removedIds, restoreCourse } from "./removal.js";
 import { getModels, settingsView, updateModels } from "./settings.js";
@@ -125,7 +126,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
     now,
     runnerLastSeen: () => runnerLastSeen,
     aiAvailable,
-    git: opts.git ?? runGit,
+    git: opts.git ?? withGithub(runGit),
   };
   resetChat(ctx);
 
@@ -291,6 +292,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
   app.get("/packages/removed", (c) => c.json({ courses: listRemoved(ctx) }));
   app.post("/packages/:id/restore", (c) => c.json(restoreCourse(ctx, c.req.param("id"))));
   app.get("/packages/:id/removal", (c) => c.json(removalSummary(ctx, c.req.param("id"))));
+  app.get("/packages/:id/updates", async (c) => c.json(await packageUpdates(ctx, c.req.param("id"))));
   app.delete("/packages/:id", (c) => c.json(removeCourse(ctx, c.req.param("id"))));
   // Dry run of the above for the add popup: same fetch and checks, nothing installed.
   app.post("/packages/preview", async (c) => {
