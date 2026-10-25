@@ -11,6 +11,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
+    "check": "pnpm install --frozen-lockfile && pnpm build && pnpm lint && pnpm typecheck && pnpm test",
     "school": "node packages/cli/dist/index.js"
   },
   "devDependencies": {

@@ -2,11 +2,13 @@ import {
   buildPath,
   courseRemovalSchema,
   packageInfoSchema,
+  packageUpdatesSchema,
   packagePreviewSchema,
   removedCoursesSchema,
   routeDef,
   type CourseRemoval,
   type PackagePreview,
+  type PackageUpdates,
   type RouteInput,
   type RouteName,
   type RouteResponse,
@@ -108,6 +110,10 @@ async function plainFetch<T>(url: string, init: RequestInit, schema: { safeParse
 /** What removing this course would delete (counts), for the confirm popup. */
 export const getRemoval = (courseId: string): Promise<CourseRemoval> =>
   plainFetch(`/api/packages/${encodeURIComponent(courseId)}/removal`, {}, courseRemovalSchema);
+
+/** Asks GitHub whether the course's ref has news and which branches and tags it could switch to (on demand: see `packageUpdatesSchema`). */
+export const getPackageUpdates = (courseId: string): Promise<PackageUpdates> =>
+  plainFetch(`/api/packages/${encodeURIComponent(courseId)}/updates`, {}, packageUpdatesSchema);
 
 const flag = <K extends string>(key: K) => ({
   safeParse: (v: unknown): { success: true; data: Record<K, true> } | { success: false } =>

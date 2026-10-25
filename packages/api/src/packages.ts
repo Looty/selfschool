@@ -4,10 +4,11 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { unzipSync } from "fflate";
-import { SCHEMA_VERSION, type CourseChoice, type PackageInfo, type PackagePreview } from "@selfschool/shared";
+import { SCHEMA_VERSION, type CourseChoice, type PackageInfo, type PackagePreview, type PackageUpdates } from "@selfschool/shared";
 import { validateCoursePackage } from "@selfschool/shared/node";
 import { listFiles, loadCourse } from "./catalog.js";
 import { loadCourses, type Ctx, type GitRunner } from "./ctx.js";
+import { checkGithubUpdates, parseGithubUrl } from "./githubGit.js";
 import { removedIds, unremoveCourse } from "./removal.js";
 import { packages } from "./db/schema.js";
 import { HttpError, newId } from "./util.js";
@@ -25,6 +26,19 @@ export const runGit: GitRunner = async (args, { cwd, timeoutMs }) => {
   });
   return stdout.trim();
 };
+
+/** Asks GitHub whether the installed course's ref has moved on, and lists the branches and tags it could switch to. */
+export async function packageUpdates(ctx: Ctx, id: string): Promise<PackageUpdates> {
+  const row = ctx.db.select().from(packages).where(eq(packages.id, id)).get();
+  if (!row) throw new HttpError(404, "course not found");
+  const base = { ref: row.ref, sha: row.sha, branches: [], tags: [] };
+  const gh = parseGithubUrl(row.url);
+  if (!gh) return { ...base, latestSha: null, status: "unknown", note: "This course did not come from a GitHub repository, so there is nothing to check." };
+
+  const found = await checkGithubUpdates(gh.owner, gh.repo, row.ref);
+  const status = found.latestSha === null ? "unknown" : found.latestSha === row.sha ? "up_to_date" : "update_available";
+  return { ...base, ...found, status };
+}
 
 export function listPackages(ctx: Ctx): PackageInfo[] {
   return loadCourses(ctx).flatMap((c) => {

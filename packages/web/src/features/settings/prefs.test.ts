@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  CHAT_GRADE, GENERATE_VERIFY, formatBytes, initialFont, initialTextSize, initialThemeChoice, initialWidth, modelChoices, packageBody, pairPatch, pairState, resolveTheme, validatePackageForm,
+  CHAT_GRADE, GENERATE_VERIFY, formatBytes, initialFont, initialTextSize, initialThemeChoice, initialWidth, modelChoices, packageBody, pairPatch, pairState, resolveTheme, validatePackageForm, versionAction,
 } from "./prefs";
 
 const models = { chat: "haiku", grade: "haiku", generate: "sonnet", verify: "opus" };
@@ -72,5 +72,21 @@ describe("formatBytes", () => {
     expect(formatBytes(512)).toBe("512 B");
     expect(formatBytes(482_816)).toBe("471.5 KB");
     expect(formatBytes(14.2 * 1024 * 1024)).toBe("14.2 MB");
+  });
+});
+
+describe("versionAction", () => {
+  const checked = (status: "up_to_date" | "update_available" | "unknown") => ({ status });
+  it("offers nothing before an update check has answered", () => {
+    expect(versionAction("main", undefined, "main")).toBeNull();
+  });
+  it("offers to review when the installed ref has moved on, and nothing when it has not", () => {
+    expect(versionAction("main", checked("update_available"), "main")).toBe("review");
+    expect(versionAction("main", checked("up_to_date"), "main")).toBeNull();
+    expect(versionAction("main", checked("unknown"), "main")).toBeNull();
+  });
+  it("offers to switch as soon as another branch or tag is picked, whatever the status", () => {
+    expect(versionAction("v1", checked("up_to_date"), "v1.1")).toBe("switch");
+    expect(versionAction("v1", checked("unknown"), "main")).toBe("switch");
   });
 });

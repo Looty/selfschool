@@ -722,6 +722,22 @@ export const courseRemovalSchema = z.object({
 });
 export type CourseRemoval = z.infer<typeof courseRemovalSchema>;
 
+/**
+ * Whether a course installed from a GitHub repo has news, and which other branches or tags it could be switched to.
+ * Served by `GET /packages/:id/updates` (on demand, never automatic: anonymous GitHub calls are limited to 60 an hour).
+ * `status` is "unknown" when nothing could be checked (not from GitHub, offline, rate limit); `note` says why.
+ */
+export const packageUpdatesSchema = z.object({
+  ref: z.string(),
+  sha: z.string(),
+  latestSha: z.string().nullable(),
+  status: z.enum(["up_to_date", "update_available", "unknown"]),
+  branches: z.array(z.string()),
+  tags: z.array(z.string()),
+  note: z.string().nullable(),
+});
+export type PackageUpdates = z.infer<typeof packageUpdatesSchema>;
+
 /** A course removed from the app whose files are still in the courses folder; `GET /packages/removed`. */
 export const removedCourseSchema = z.object({ id: z.string(), title: z.string(), folder: z.string() });
 export type RemovedCourse = z.infer<typeof removedCourseSchema>;

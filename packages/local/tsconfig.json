@@ -1,0 +1,15 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@selfschool/shared": ["../shared/src/index.ts"],
+      "@selfschool/shared/node": ["../shared/src/node.ts"]
+    }
+  },
+  "include": ["src", "test", "vite.config.ts", "vitest.config.ts"]
+}

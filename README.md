@@ -3,6 +3,7 @@
 A personal, AI-native course platform that runs on your machine. You say "teach me X"; an AI agent researches it and writes a course (lessons, quizzes, exams, runnable labs, sources). Selfschool is the reader: course grid, lesson reader with a pinned tutor, quizzes, exams, progress, weak spots. One user, no accounts, nothing leaves your computer except the AI calls you make.
 
 - **Courses are plain files** in their own git repo, for example [selfschool-courses](https://github.com/Looty/selfschool-courses). **Your progress is a SQLite file.** They never mix.
+- **Two ways to run it:** in Docker (the default below), or entirely in a browser tab with no Docker (see [No Docker](#no-docker-run-it-entirely-in-the-browser-experimental)). Same app and same API in both.
 - **The AI part is your own Claude CLI**, run on your machine by a small runner (chat, grading, extra questions). Without it the app still reads courses and runs quizzes.
 - Design and decisions: [plan.md](plan.md). UI rules: [docs/ui.md](docs/ui.md).
 
@@ -48,12 +49,32 @@ Without the runner everything else works, and AI features show "AI is paused".
 | `pnpm school new-id "<title>"` | Prints a unique id for a new course |
 | `pnpm school validate <course folder>` | Checks a course against the format rules |
 | `pnpm test` / `pnpm typecheck` | Run the tests / the type checks |
+| `pnpm check` | The whole CI sequence in one go: install, build, lint, typecheck, test |
 
 Ports: web `5174`, API `3001` (both on `127.0.0.1` only).
+
+### No Docker: run it entirely in the browser (experimental)
+
+The same app and the same API can also run inside a browser tab, the way WordPress Playground runs WordPress. There is no server, no container and no account: SQLite runs as WebAssembly, courses live in an in-memory file system, and both are saved in your browser (IndexedDB). Nothing leaves the page except the requests you make to GitHub when you import a course. From a clone with `pnpm install` done:
+
+```bash
+pnpm --filter @selfschool/local dev   # then open http://localhost:5175/?sample=1 (the sample course loads on a first visit)
+pnpm --filter @selfschool/local build # a static site in packages/local/dist that any file host can serve
+```
+
+- **Add courses** in Settings from a zip or a public GitHub URL (including a repo with several courses). GitHub imports use GitHub's web APIs, so no `git` is needed. Anonymous GitHub API calls are limited to 60 an hour.
+- **Not available in this mode yet:** the AI tutor and AI grading (the runner needs your Claude CLI, which a page cannot reach), and imports from hosts other than github.com.
+- **Your data stays in that browser.** Browsers can clear site data, so the dashboard reminds you to export a backup (Settings > Export backup) when you have progress and the last backup is missing or over two weeks old. This mode and the Docker setup are separate installs and do not share progress or courses, but the backup file is the same SQLite file in both, so a backup from one restores into the other.
+- **Updates.** If you host the built site, a deploy replaces the app files under every visitor's browser while their data stays put: the database is upgraded on the next start, and an open tab shows a "new version available, reload" bar (your progress is saved before it reloads).
+- **It runs next to Docker.** It uses its own port (`5175`) and storage, and shares no files with the containers, so both can be up at the same time.
 
 ## Add or create courses
 
 **Add a ready-made course.** Settings → Course packages: paste a repository URL, tick the courses you want and import. A course from a repository is pinned to a commit, so you can see when its author updates it. You can also drop a course `.zip` there, or just copy a course folder into your courses folder.
+
+### Keep a course up to date, or switch version
+
+Each installed course remembers where it came from: the repo URL, the path inside it, the branch or tag (`ref`) and the commit. In Settings > Course packages, **Check for updates** asks GitHub (on demand, never automatically: anonymous calls are limited to 60 an hour) whether that branch or tag has moved, and lists the repo's other branches and tags. **Review changes** (or **Switch to v1.1** after picking another version) opens the usual import popup, which checks the new version first and then updates the course in place. Your progress is kept; lessons that changed are flagged. This works for courses installed from a GitHub URL; zip and local-folder courses have nothing to check.
 
 ### Example courses
 
@@ -114,6 +135,7 @@ packages/api      Hono + SQLite API (reads courses, stores progress)
 packages/web      React app
 packages/runner   host process that runs the Claude CLI for chat, grading and generation
 packages/cli      the `school` command
+packages/local    runs the web app and the api in a browser tab, no Docker (browser shims only; the other packages are unchanged)
 skill/            the course-authoring skill and its templates
 examples/         sample courses used as test fixtures
 docker/           the one image used by the dev containers

@@ -1,0 +1,35 @@
+{
+  "name": "@selfschool/local",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Selfschool running entirely in the browser: the real web app and the real api, on shims for SQLite, the filesystem and crypto. Nothing in the other packages changes.",
+  "scripts": {
+    "dev": "vite --port 5175",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run && vitest run --config vitest.api.config.ts"
+  },
+  "dependencies": {
+    "@noble/hashes": "^1.8.0",
+    "buffer": "^6.0.3",
+    "path-browserify": "^1.0.1",
+    "sql.js": "^1.13.0"
+  },
+  "devDependencies": {
+    "@selfschool/shared": "workspace:*",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^24.0.0",
+    "@types/path-browserify": "^1.0.3",
+    "@types/sql.js": "^1.4.9",
+    "@vitejs/plugin-react": "^6.1.2",
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.4",
+    "fflate": "^0.8.3",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}

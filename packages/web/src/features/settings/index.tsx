@@ -2,8 +2,9 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import { useLocation } from "react-router-dom";
 import type { PackageInfo, Settings } from "@selfschool/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getRemoved, restoreCourse } from "../../api/client";
+import { getPackageUpdates, getRemoved, restoreCourse } from "../../api/client";
 import { usePackages, useSettings, useUpdateSettings } from "../../api/hooks";
+import { LOCAL, describeLastBackup, loadLastBackup, markBackupDone } from "./backup";
 import { ImportDialog, type ImportSource } from "./ImportDialog";
 import { RemoveDialog } from "./RemoveDialog";
 import { currentTheme } from "../../theme";
@@ -13,7 +14,7 @@ import { ThemePicker } from "./ThemePicker";
 import {
   CHAT_GRADE, FONT_OPTIONS, FONT_STACK, GENERATE_VERIFY, TEXT_SIZE_DEFAULT, TEXT_SIZE_MAX, WIDTH_OPTIONS, applyContentWidth, applyReadingFont, applyTextSize, applyThemeChoice, formatBytes,
   loadContentWidth, loadReadingFont, loadTextSize, loadThemeChoice, modelChoices, packageBody, pairPatch, pairState, resolveTheme, shortSha, systemPrefersDark,
-  validatePackageForm,
+  validatePackageForm, versionAction,
   type ContentWidth, type ModelPair, type PackageForm, type ReadingFont, type ThemeChoice,
 } from "./prefs";
 
@@ -303,7 +304,7 @@ function Packages() {
       ) : q.data.packages.length === 0 ? (
         <p className="m-0 border-b border-border py-4 text-[13px] text-text3">No course packages yet. Add one by repo URL, path and ref.</p>
       ) : (
-        q.data.packages.map((p) => <PackageRow key={p.id} pkg={p} onRemove={() => setRemoving(p)} />)
+        q.data.packages.map((p) => <PackageRow key={p.id} pkg={p} onRemove={() => setRemoving(p)} onReview={(body) => setImporting({ kind: "repo", body })} />)
       )}
       {removing ? <RemoveDialog pkg={removing} onClose={() => setRemoving(null)} /> : null}
       <RemovedList />
@@ -311,8 +312,17 @@ function Packages() {
   );
 }
 
-function PackageRow({ pkg, onRemove }: { pkg: PackageInfo; onRemove: () => void }) {
-  const update = pkg.status === "update_available";
+/**
+ * One installed course. "Check for updates" asks GitHub (on demand) whether its branch or tag has moved and which other
+ * branches and tags exist; reviewing an update or switching to another version opens the normal import popup, which
+ * dry-runs it and keeps your progress (an existing course is updated in place).
+ */
+function PackageRow({ pkg, onRemove, onReview }: { pkg: PackageInfo; onRemove: () => void; onReview: (body: { url: string; path: string; ref: string }) => void }) {
+  const check = useMutation({ mutationFn: () => getPackageUpdates(pkg.id) });
+  const updates = check.data;
+  const [picked, setPicked] = useState(pkg.ref);
+  const action = versionAction(pkg.ref, updates, picked);
+  const others = (names: string[]) => names.filter((n) => n !== pkg.ref);
   return (
     <div data-hue={pkg.course.hue} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border py-3.5">
       <span className="w-11 font-mono text-sm font-semibold text-hue" title={pkg.course.title}>
@@ -320,23 +330,63 @@ function PackageRow({ pkg, onRemove }: { pkg: PackageInfo; onRemove: () => void 
       </span>
       <span className="min-w-0 flex-[1_1_260px] break-all font-mono text-xs text-text2">
         {pkg.url}
-        {pkg.path ? `/${pkg.path}` : ""} @ {shortSha(pkg.sha)}
+        {pkg.path ? `/${pkg.path}` : ""} @ {pkg.ref} · {shortSha(pkg.sha)}
       </span>
-      {update ? (
-        <>
-          <Badge tone="hue" mono={false}>
-            Update available
-          </Badge>
-          <Button size="sm" disabled title="The review screen is not built yet" className="!h-7 !px-2.5 !text-xs">
-            Review changes
-          </Button>
-        </>
-      ) : (
+      {updates?.status === "update_available" ? (
+        <Badge tone="hue" mono={false}>
+          Update available
+        </Badge>
+      ) : updates?.status === "up_to_date" ? (
         <span className="text-xs text-text3">Up to date</span>
-      )}
+      ) : null}
+      {updates && (updates.branches.length > 0 || updates.tags.length > 0) ? (
+        <select
+          value={picked}
+          onChange={(e) => setPicked(e.target.value)}
+          aria-label={`Version of ${pkg.course.title}`}
+          className="h-7 max-w-[10rem] rounded border border-border2 bg-surface px-1.5 font-mono text-xs text-text"
+        >
+          <option value={pkg.ref}>{pkg.ref} (installed)</option>
+          {others(updates.branches).length > 0 ? (
+            <optgroup label="Branches">
+              {others(updates.branches).map((n) => (
+                <option key={`b-${n}`} value={n}>
+                  {n}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          {others(updates.tags).length > 0 ? (
+            <optgroup label="Tags">
+              {others(updates.tags).map((n) => (
+                <option key={`t-${n}`} value={n}>
+                  {n}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+        </select>
+      ) : null}
+      {action ? (
+        <Button size="sm" onClick={() => onReview({ url: pkg.url, path: pkg.path, ref: picked })} className="!h-7 !px-2.5 !text-xs">
+          {action === "switch" ? `Switch to ${picked}` : "Review changes"}
+        </Button>
+      ) : null}
+      <Button size="sm" disabled={check.isPending} onClick={() => check.mutate()} aria-label={`Check ${pkg.course.title} for updates`} className="!h-7 !px-2.5 !text-xs">
+        {check.isPending ? "Checking…" : "Check for updates"}
+      </Button>
       <Button size="sm" onClick={onRemove} aria-label={`Remove ${pkg.course.title}`} className="!h-7 !px-2.5 !text-xs">
         Remove
       </Button>
+      {check.isError ? (
+        <p role="alert" className="m-0 basis-full text-[13px] text-bad">
+          Could not check: {check.error.message}
+        </p>
+      ) : updates?.note ? (
+        <p role="status" className="m-0 basis-full text-[13px] text-text3">
+          {updates.note}
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -468,14 +518,22 @@ function AddPackageForm({ onCheck }: { onCheck: (body: { url: string; path: stri
 
 function Data() {
   const q = useSettings();
+  const [last, setLast] = useState(loadLastBackup);
   return (
     <Group title="Data">
-      <Row title="Progress database" help="Attempts, progress, XP and the question bank. Course files are separate.">
+      <Row
+        title="Progress database"
+        help={`Attempts, progress, XP and the question bank. Course files are separate. ${describeLastBackup(Date.now(), last)}.${LOCAL ? " In this build the data lives in your browser, which can clear it: export a backup now and then." : ""}`}
+      >
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs text-text3">{q.data ? formatBytes(q.data.database.sizeBytes) : q.isError ? "unavailable" : "…"}</span>
           <a
             href="/api/backup"
             download
+            onClick={() => {
+              markBackupDone();
+              setLast(loadLastBackup());
+            }}
             className="inline-flex h-8 items-center rounded-button border border-border2 bg-bg px-3 text-[13px] font-medium text-text no-underline hover:bg-surface2"
           >
             Export backup

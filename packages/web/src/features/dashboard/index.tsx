@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import type { ContinueCard, Dashboard } from "@selfschool/shared";
 import { useDashboard, useSettings } from "../../api/hooks";
 import { Button, SectionLabel, cx } from "../../ui";
+import { BackupNudge } from "./BackupNudge";
 import { CourseCard } from "./CourseCard";
 import {
   activeDays, barHeights, continueLabel, dateLabel, formatMinutes, heatColor, heatmapWeeks, plural, ringDash, weakSpotTone,
@@ -39,6 +40,8 @@ export function DashboardView({ data, paused, now = new Date() }: { data: Dashbo
           </Link>
         ) : null}
       </div>
+
+      <BackupNudge hasProgress={data.courses.some((c) => c.started)} />
 
       {data.continue ? <ContinueHero card={data.continue} /> : null}
 

@@ -174,6 +174,16 @@ export const packageBody = (f: PackageForm) => ({ url: f.url.trim(), path: f.pat
 
 export const shortSha = (sha: string) => sha.slice(0, 7);
 
+/**
+ * What a package row's action button does once an update check has answered: "switch" when another branch or tag
+ * is picked, "review" when the picked ref has moved on, nothing when there is nothing to do.
+ */
+export function versionAction(currentRef: string, updates: { status: "up_to_date" | "update_available" | "unknown" } | undefined, picked: string): "switch" | "review" | null {
+  if (!updates) return null;
+  if (picked !== currentRef) return "switch";
+  return updates.status === "update_available" ? "review" : null;
+}
+
 export function formatBytes(n: number): string {
   if (n < 1024) return `${n} B`;
   const units = ["KB", "MB", "GB"];
