@@ -32,7 +32,7 @@ export function lessonMinutes(body: string): number {
     .replace(/^:::.*$/gm, " ") // directive fences (:::low-confidence, :::key-takeaways, :::)
     .replace(/!\[[^\]]*\]\([^)]*\)/g, " ") // images are timed separately
     .replace(/\[([^\]]*)\]\([^)]*\)/g, "$1") // link text counts, the URL does not
-    .replace(/[#>*_`|\-]+/g, " ");
+    .replace(/[#>*_`|-]+/g, " ");
   const images = (body.match(/!\[[^\]]*\]\([^)]*\)/g) ?? []).length;
   const words = prose.split(/\s+/).filter(Boolean).length;
   const minutes = words / READING_WPM + (codeLines * CODE_SECONDS_PER_LINE + images * IMAGE_SECONDS) / 60;

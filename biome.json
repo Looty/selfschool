@@ -1,0 +1,34 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  "files": {
+    "includes": ["packages/**/*.{ts,tsx}", "!**/node_modules", "!**/dist", "!**/.selfschool", "!packages/api/drizzle"]
+  },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": { "noNonNullAssertion": "off", "useTemplate": "off" },
+      "complexity": { "noCommaOperator": "off", "useLiteralKeys": "off" },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noControlCharactersInRegex": "off",
+        "noExplicitAny": "warn",
+        "noAssignInExpressions": "warn",
+        "useIterableCallbackReturn": "warn"
+      },
+      "correctness": { "useExhaustiveDependencies": "warn" },
+      "security": { "noDangerouslySetInnerHtml": "warn" },
+      "a11y": {
+        "noSvgWithoutTitle": "warn",
+        "useSemanticElements": "warn",
+        "noNoninteractiveTabindex": "warn",
+        "useAriaPropsSupportedByRole": "warn",
+        "noStaticElementInteractions": "warn",
+        "useKeyWithClickEvents": "warn",
+        "noAutofocus": "warn"
+      }
+    }
+  }
+}

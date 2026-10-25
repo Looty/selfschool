@@ -192,7 +192,7 @@ export function validateExtensionOverlay(dir: string, packageDir?: string): Vali
 
   const manifestPath = join(dir, "extension.yaml");
   if (!existsSync(manifestPath)) return { ok: false, issues: [{ file: "extension.yaml", message: "missing" }] };
-  let manifest;
+  let manifest: ReturnType<typeof overlayManifestSchema.parse>;
   try {
     const parsed = overlayManifestSchema.safeParse(parseYaml(readFileSync(manifestPath, "utf8")));
     if (!parsed.success) {
@@ -292,7 +292,7 @@ export function validateExtensionOverlay(dir: string, packageDir?: string): Vali
     }
     for (const f of files.filter((n) => /^quiz-.*\.ya?ml$/.test(n))) {
       const path = join(chapterDir, f);
-      let quiz;
+      let quiz: ReturnType<typeof quizSchema.parse>;
       try {
         const parsed = quizSchema.safeParse(parseYaml(readFileSync(path, "utf8")));
         if (!parsed.success) {

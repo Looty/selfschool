@@ -12,7 +12,7 @@ import type {
 import { questionKey, type LoadedCourse } from "./catalog.js";
 import { completeLesson } from "./courses.js";
 import { getCourse, type Ctx } from "./ctx.js";
-import { attemptAnswers, attempts, examInstances, jobs, questions, xpEvents } from "./db/schema.js";
+import { attemptAnswers, attempts, examInstances, jobs, type questions, xpEvents } from "./db/schema.js";
 import { enqueueJob } from "./jobs.js";
 import { HttpError, newId, sha256, shortAnswerMatches } from "./util.js";
 

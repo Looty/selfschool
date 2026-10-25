@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { newCourseId } from "../src/course";
+import { newCourseId } from "../src/course.js";
 
 describe("newCourseId", () => {
   it("slugs the title and appends a 6 character suffix", () => {

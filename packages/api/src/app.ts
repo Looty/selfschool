@@ -159,7 +159,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
     app.on(def.method, def.path, async (c) => {
       const params = def.params ? def.params.safeParse(c.req.param()) : { success: true as const, data: {} };
       if (!params.success) return c.json({ error: "invalid params", issues: params.error.issues }, 400);
-      let body: unknown = undefined;
+      let body: unknown ;
       if (def.body) {
         const parsed = def.body.safeParse(await c.req.json().catch(() => undefined));
         if (!parsed.success) return c.json({ error: "invalid body", issues: parsed.error.issues }, 400);

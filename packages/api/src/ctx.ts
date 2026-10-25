@@ -1,6 +1,6 @@
 import { and, desc, eq } from "drizzle-orm";
 import { SCHEMA_VERSION, type Question } from "@selfschool/shared";
-import { Catalog, questionKey, type LoadedCourse } from "./catalog.js";
+import { type Catalog, questionKey, type LoadedCourse } from "./catalog.js";
 import type { Db } from "./db/client.js";
 import { lessonRevisions, packages, questions } from "./db/schema.js";
 import { HttpError, sha256 } from "./util.js";

@@ -7,9 +7,13 @@
     "node": ">=22"
   },
   "scripts": {
+    "lint": "biome lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "build": "pnpm -r build",
     "school": "node packages/cli/dist/index.js"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.6.3"
   }
 }

@@ -10,7 +10,7 @@ import {
 } from "./attempts.js";
 import type { LoadedCourse, LoadedExam } from "./catalog.js";
 import { getCourse, questionHash, type Ctx } from "./ctx.js";
-import { attempts, examInstances, jobs, questions } from "./db/schema.js";
+import { attempts, examInstances, type jobs, questions } from "./db/schema.js";
 import { enqueueJob, ResultRejected } from "./jobs.js";
 import { HttpError, newId, shuffled } from "./util.js";
 
