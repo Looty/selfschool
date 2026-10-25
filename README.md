@@ -55,6 +55,29 @@ Ports: web `5174`, API `3001` (both on `127.0.0.1` only).
 
 **Add a ready-made course.** Settings → Course packages: paste a repository URL, tick the courses you want and import. A course from a repository is pinned to a commit, so you can see when its author updates it. You can also drop a course `.zip` there, or just copy a course folder into your courses folder.
 
+### Example courses
+
+[selfschool-courses](https://github.com/Looty/selfschool-courses) is a public repository with three finished courses you can import to see what a course looks like:
+
+| Course | Folder in the repository | What it is |
+|---|---|---|
+| [How LLMs Work: From Zero to Your Own](https://github.com/Looty/selfschool-courses/tree/main/how-llms-work-from-zero-to-your-own-2iy8t7) | `how-llms-work-from-zero-to-your-own-2iy8t7` | About 13 hours, 13 chapters, 65 lessons, Python labs you run yourself. For engineers new to ML. |
+| [MLOps from Zero to Production](https://github.com/Looty/selfschool-courses/tree/main/mlops-from-zero-to-production-gblt3l) | `mlops-from-zero-to-production-gblt3l` | 52 lessons with hands-on labs. |
+| [TypeScript Fundamentals](https://github.com/Looty/selfschool-courses/tree/main/typescript-fundamentals) | `typescript-fundamentals` | 12 short lessons, plus a demo of every question type. |
+
+How to import them:
+
+1. Start the app (`docker compose up -d`) and open **http://127.0.0.1:5174/settings**.
+2. Scroll to **Course packages**. Under **Repository URL** enter `https://github.com/Looty/selfschool-courses`.
+3. Leave **Path** empty (it means the repository root) and leave **Ref** as `main`.
+4. Click **Check package**. The app clones the repository, sees that it holds three courses and lists them. Each row shows the title, lesson count, level and a status: *New*, *Installed; import replaces it*, or *Already installed from another source* (that one cannot be ticked).
+5. Tick the courses you want. All new ones start ticked; use **Select all** or **Select none** to change that.
+6. Click **Import N courses**. They are added one by one, each row ends with *Added* (or the reason it failed), and **Open courses** takes you to them.
+
+To import just one course, type its folder name in **Path** (for example `typescript-fundamentals`) before clicking **Check package**. The popup then shows a preview of its chapters, lessons and quizzes before you confirm.
+
+If a course already sits in your courses folder (for example because you cloned that repository next to the app), the app lists it from there and the import is refused for the same course id. Remove it in Settings first if you want it installed from the repository instead; removing a course also deletes your progress in it.
+
 **Make a new course with an AI agent** (this is what most people want):
 
 1. Install the authoring skill once. For Claude Code:
