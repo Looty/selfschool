@@ -8,7 +8,7 @@ A personal, AI-native course platform that runs on your machine. You say "teach 
 
 ## Quick start
 
-You need Docker Desktop, Node 22 or newer, and (for the tutor and grading) the [Claude CLI](https://docs.claude.com/en/docs/claude-code) installed and logged in.
+All you need is **Docker Desktop**. The app runs in containers.
 
 ```bash
 # the app and your courses, side by side
@@ -17,16 +17,31 @@ git clone https://github.com/Looty/selfschool-courses.git
 
 cd selfschool
 cp .env.example .env            # defaults work; edit only if a port is taken
+docker compose up -d --build    # first run builds the image and installs dependencies (a few minutes)
+```
+
+Open **http://127.0.0.1:5174**. You can read courses, take quizzes and exams, and track progress now. The courses repo is mounted from `../selfschool-courses` (set `COURSES_PATH` in `.env` for another folder).
+
+```bash
+docker compose logs -f          # watch the api and web
+docker compose restart api      # after changing API code (file changes on Windows do not reach the container)
+docker compose down             # stop; your progress stays in the `selfschool-data` volume
+```
+
+### Turn on the AI tutor and grading (optional)
+
+Chat, open-answer grading and generated questions run through **your own Claude CLI**, so they run on your machine, not in a container. You need Node 22 or newer and the [Claude CLI](https://docs.claude.com/en/docs/claude-code) installed and logged in:
+
+```bash
 corepack enable
 pnpm install
 pnpm build                      # once, builds the `school` command
-
-pnpm school up                  # starts the containers, then the AI runner (Ctrl+C stops it)
+pnpm school up                  # starts the containers (if they are not up) and the AI runner; Ctrl+C stops the runner
 ```
 
-Open **http://127.0.0.1:5174**. The courses repo is mounted from `../selfschool-courses` (change `COURSES_PATH` in `.env` to use another folder).
+Without the runner everything else works, and AI features show "AI is paused".
 
-| Command | What it does |
+| Command (host) | What it does |
 |---|---|
 | `pnpm school up` / `down` | Start / stop the containers and the runner |
 | `pnpm school doctor` | Checks Docker, the API, the database, the runner and the Claude CLI |
@@ -34,7 +49,7 @@ Open **http://127.0.0.1:5174**. The courses repo is mounted from `../selfschool-
 | `pnpm school validate <course folder>` | Checks a course against the format rules |
 | `pnpm test` / `pnpm typecheck` | Run the tests / the type checks |
 
-Ports: web `5174`, API `3001` (both on `127.0.0.1` only). Changed API code needs `docker compose restart api`.
+Ports: web `5174`, API `3001` (both on `127.0.0.1` only).
 
 ## Add or create courses
 
