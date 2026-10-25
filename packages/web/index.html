@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selfschool</title>
+    <script>
+      // Set the theme before first paint to avoid a light flash. Keep the ids in step with THEMES in src/theme.ts.
+      try {
+        var t = localStorage.getItem("selfschool-theme");
+        var ids = ["light", "light-colorblind", "dark", "dark-colorblind", "soft-dark"];
+        if (ids.indexOf(t) === -1) t = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        document.documentElement.dataset.theme = t;
+        document.documentElement.dataset.mode = t.indexOf("dark") === -1 ? "light" : "dark";
+      } catch (e) {
+        document.documentElement.dataset.theme = "light";
+        document.documentElement.dataset.mode = "light";
+      }
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

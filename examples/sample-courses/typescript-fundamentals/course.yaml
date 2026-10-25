@@ -1,0 +1,26 @@
+schemaVersion: 1
+id: typescript-fundamentals
+title: TypeScript Fundamentals
+short_intro: Types you actually use, narrowing, and generics, in 12 short lessons.
+description: |
+  A compact course for developers who already write JavaScript. You learn how the
+  compiler infers types, how **narrowing** turns a union into a precise type inside
+  each branch, and how generics keep code reusable without losing type information.
+
+  Prerequisites: working JavaScript (functions, objects, arrays).
+level: Beginner
+hue: blue
+monogram: TS
+tags: [typescript, programming]
+chapters:
+  - dir: 01-basics
+    title: Types you actually use
+  - dir: 02-narrowing
+    title: Narrowing and unions
+  - dir: 03-generics
+    title: Generics
+  - dir: 04-question-types
+    title: Question types (demo)
+    level: 2
+exams:
+  - {id: mid, file: exams/mid.yaml, after: 02-narrowing}

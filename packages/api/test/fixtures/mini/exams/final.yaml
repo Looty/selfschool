@@ -1,0 +1,17 @@
+schemaVersion: 1
+id: final
+title: Final exam
+duration_minutes: 10
+max_attempts: 0
+passing_percentage: 60
+shuffle: false
+limit_questions: 4
+domains:
+  - id: d1
+    title: Domain one
+    weight: 50
+    chapters: [c1]
+  - id: d2
+    title: Domain two
+    weight: 50
+    chapters: [c2]

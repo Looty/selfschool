@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lesson reader</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Serif:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+.app{--canvas:#F3F5F8;--bg:#FFFFFF;--surface:#F8F9FB;--surface2:#EEF1F5;--border:#E2E6EC;--border2:#CDD3DC;--text:#0B1220;--text2:#475467;--text3:#5F6A7D;--primary:#0B1220;--primary-fg:#FFFFFF;--accent:#4C3FD9;--accent-fg:#FFFFFF;--accent-soft:#EFEDFD;--ok:#0F7B45;--ok-bg:#ECFAF2;--bad:#C0262D;--bad-bg:#FDEFEF;--warn:#A15C07;--warn-bg:#FEF6E4;--hue-blue:#1F6FD0;--hue-blue-bg:#E9F2FD;--hue-blue-ink:#14529E;--hue-orange:#C2570C;--hue-orange-bg:#FFF1E5;--hue-orange-ink:#8F3F08;--hue-teal:#0B7A6F;--hue-teal-bg:#E3F5F2;--hue-teal-ink:#085A52;--hue-pink:#B8255F;--hue-pink-bg:#FCEAF1;--hue-pink-ink:#8A1A47}
+.app[data-theme="dark"]{--canvas:#090B10;--bg:#0F131B;--surface:#141925;--surface2:#1B2130;--border:#232A39;--border2:#333C4F;--text:#E9EDF5;--text2:#A3ADBD;--text3:#8892A4;--primary:#E9EDF5;--primary-fg:#0B1220;--accent:#9A8CFF;--accent-fg:#120C33;--accent-soft:#221C4F;--ok:#3DDC84;--ok-bg:#0C2418;--bad:#FF7B7B;--bad-bg:#2C1417;--warn:#F5B73B;--warn-bg:#2A1F0B;--hue-blue:#6AA8FF;--hue-blue-bg:#0F2038;--hue-blue-ink:#9CC4FF;--hue-orange:#FBA45C;--hue-orange-bg:#2B1A0C;--hue-orange-ink:#FDC08F;--hue-teal:#34D3C0;--hue-teal-bg:#0B2420;--hue-teal-ink:#7BE5D6;--hue-pink:#F58BB4;--hue-pink-bg:#2B1220;--hue-pink-ink:#F9B3CD}
+a{color:inherit}
+</style>
+</helmet>
+<div class="app" data-theme="{{theme}}" style="min-height: 1740px; background: var(--bg); color: var(--text); font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 14px; line-height: 1.5; display: flex; flex-direction: column">
+  <header style="display: flex; align-items: center; gap: 28px; height: 56px; padding: 0 28px; border-bottom: 1px solid var(--border); background: var(--bg)">
+    <a href="Main.dc.html" style="display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 16px; letter-spacing: -0.01em; text-decoration: none">
+      <span style="width: 26px; height: 26px; border-radius: 7px; background: var(--primary); color: var(--primary-fg); display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3v18M18 3v18M6 8h12M6 16h12M6 8l12 8"/></svg></span>Selfschool</a>
+    <nav style="display: flex; gap: 2px; flex-grow: 1">
+      <a href="Main.dc.html" style="padding: 7px 12px; border-radius: 8px; text-decoration: none; color: var(--text2)">Dashboard</a>
+      <a href="Course.dc.html" style="padding: 7px 12px; border-radius: 8px; text-decoration: none; background: var(--surface2); color: var(--text); font-weight: 500">Courses</a>
+      <a href="Exam.dc.html" style="padding: 7px 12px; border-radius: 8px; text-decoration: none; color: var(--text2)">Attempts</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <a href="Settings.dc.html" aria-label="Settings" title="Settings" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; color: var(--text2); text-decoration: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></a>
+      <button type="button" onClick="{{toggleTheme}}" aria-label="Toggle light and dark theme" title="Toggle theme" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text2); cursor: pointer">
+        <sc-if value="{{isDark}}" hint-placeholder-val="{{ false }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></sc-if>
+        <sc-if value="{{isLight}}" hint-placeholder-val="{{ true }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></sc-if>
+      </button>
+    </div>
+  </header>
+
+  <div style="position: relative; background: var(--hue-blue-bg); border-bottom: 1px solid var(--border)">
+    <div style="position: absolute; inset: 0; opacity: 0.4; background-image: radial-gradient(circle, var(--hue-blue) 1px, transparent 1.5px); background-size: 14px 14px; -webkit-mask-image: linear-gradient(90deg, transparent 30%, #000 50%, transparent 72%); mask-image: linear-gradient(90deg, transparent 30%, #000 50%, transparent 72%); pointer-events: none"></div>
+    <div style="position: relative; max-width: 1180px; margin: 0 auto; padding: 18px 28px 20px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+      <div style="display: flex; align-items: center; gap: 16px; min-width: 0">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 26px; letter-spacing: -0.03em; color: var(--hue-blue)">TS</span>
+        <span style="width: 1px; height: 28px; background: var(--hue-blue); opacity: 0.35" aria-hidden="true"></span>
+        <div style="min-width: 0">
+          <a href="Course.dc.html" style="font-weight: 600; text-decoration: none">TypeScript Fundamentals</a>
+          <div style="font-size: 13px; color: var(--text2)">2 · Narrowing and unions</div>
+        </div>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text2); margin-right: 6px"><span style="font-size: 22px; font-weight: 600; color: var(--text); letter-spacing: -0.02em">06</span> / 12</span>
+        <button type="button" aria-expanded="{{menuOpen}}" style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-weight: 500; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Contents</button>
+        <a href="Lesson.dc.html" aria-label="Previous lesson" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg); color: var(--text2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></a>
+        <a href="Lesson.dc.html" aria-label="Next lesson" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg); color: var(--text2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+      </div>
+      <sc-if value="{{menuOpen}}" hint-placeholder-val="{{ false }}">
+        <div role="dialog" aria-label="Contents" style="position: absolute; right: 28px; top: calc(100% - 6px); z-index: 30; width: 340px; padding: 8px; border: 1px solid var(--border2); border-radius: 12px; background: var(--bg); box-shadow: 0 12px 32px rgba(11, 18, 32, 0.14); display: flex; flex-direction: column; gap: 2px">
+          <div style="display: flex; justify-content: space-between; padding: 8px 10px 4px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3)"><span>1 · Types you actually use</span><span>3/3</span></div>
+          <div style="display: flex; justify-content: space-between; padding: 8px 10px 4px; margin-top: 4px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text)"><span>2 · Narrowing and unions</span><span style="color: var(--text3)">2/4</span></div>
+          <a href="Lesson.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--text2)"><span style="color: var(--ok); display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg></span>Narrowing with typeof</a>
+          <a href="Lesson.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--text2)"><span style="color: var(--ok); display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12.5 2.5 2.5 4.5-5"/></svg></span>Unions and discriminants</a>
+          <a href="Lesson.dc.html" aria-current="page" style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; text-decoration: none; background: var(--hue-blue-bg); color: var(--hue-blue-ink); font-weight: 500"><span style="display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg></span>Type guards</a>
+          <a href="Lesson.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--text2)"><span style="color: var(--text3); display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/></svg></span>Exhaustiveness checks</a>
+          <a href="Exam.dc.html" style="display: flex; justify-content: space-between; padding: 7px 10px; border-radius: 8px; text-decoration: none; color: var(--text2)"><span>Mid-course exam</span><span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--warn)">ATTEMPT 2</span></a>
+          <div style="display: flex; justify-content: space-between; padding: 8px 10px 4px; margin-top: 4px; border-top: 1px solid var(--border); font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3)"><span>3 · Generics</span><span>0/5</span></div>
+        </div>
+      </sc-if>
+    </div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--border)"><div style="width: 42%; height: 100%; background: var(--hue-blue)"></div></div>
+  </div>
+
+  <article style="flex-grow: 1; width: 100%; box-sizing: border-box; max-width: 940px; margin: 0 auto; padding: 44px 28px 56px">
+    <div style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3)">Lesson 06 · 12 min read · revision 1</div>
+    <h1 style="margin: 10px 0 14px; font-size: 40px; line-height: 1.12; font-weight: 600; letter-spacing: -0.025em">Type guards</h1>
+    <p style="margin: 0 0 32px; font-size: 19px; line-height: 1.55; color: var(--text2); max-width: 78ch">Narrowing lets the compiler follow the checks you already write, so a value that starts out as a union ends up with a precise type inside each branch.</p>
+
+    <div style="font-family: {{proseFont}}; font-size: 17px; line-height: 1.75; display: flex; flex-direction: column; gap: 20px">
+      <p style="margin: 0">A type guard is an expression whose result tells the compiler which member of a union you are holding, so that inside the branch it can treat the variable as that narrower type and let you use members that only exist on it. The simplest guard is <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.86em; padding: 2px 6px; border-radius: 5px; background: var(--surface2)">typeof</code>, and it covers every primitive you will meet in everyday code: string, number, boolean, bigint, symbol and undefined. <sup style="font-size: 11px; font-family: 'IBM Plex Sans', sans-serif"><a href="#s3" style="color: var(--accent); text-decoration: none">[3]</a></sup></p>
+
+      <pre style="margin: 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; line-height: 1.65; overflow-x: auto">function pad(x: string | number) {
+  if (typeof x === "string") {
+    return x.padStart(4);   <span style="color: var(--text3)">// x: string</span>
+  }
+  return x.toFixed(2);      <span style="color: var(--text3)">// x: number</span>
+}</pre>
+
+      <h2 style="margin: 12px 0 -6px; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em">User-defined guards</h2>
+
+      <p style="margin: 0">When <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.86em; padding: 2px 6px; border-radius: 5px; background: var(--surface2)">typeof</code> is not enough, for example because both union members are object types, you write a user-defined guard. Its return type, <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.86em; padding: 2px 6px; border-radius: 5px; background: var(--surface2)">p is Fish</code>, is a promise you make to the compiler: if the function returns true, the argument is a Fish. <span style="position: relative; background: var(--accent-soft); border-radius: 3px"><span style="position: absolute; left: 0; bottom: calc(100% + 8px); display: flex; gap: 2px; padding: 3px; border: 1px solid var(--border2); border-radius: 9px; background: var(--bg); box-shadow: 0 8px 24px rgba(11, 18, 32, 0.12); font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 12px; line-height: 1; white-space: nowrap"><button type="button" style="border: 0; background: transparent; color: var(--accent); font: inherit; font-weight: 500; padding: 6px 9px; border-radius: 6px; cursor: pointer">Ask about this</button><button type="button" style="border: 0; background: transparent; color: var(--text2); font: inherit; padding: 6px 9px; border-radius: 6px; cursor: pointer">Copy</button></span>The compiler does not check that promise against your function body,</span> so a wrong guard silently breaks type safety everywhere it is used. <sup style="font-size: 11px; font-family: 'IBM Plex Sans', sans-serif"><a href="#s3" style="color: var(--accent); text-decoration: none">[3]</a></sup></p>
+
+      <pre style="margin: 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-family: 'IBM Plex Mono', monospace; font-size: 13.5px; line-height: 1.65; overflow-x: auto">type Fish = { swim(): void };
+type Bird = { fly(): void };
+
+function isFish(p: Fish | Bird): p is Fish {
+  return "swim" in p;
+}</pre>
+
+      <h2 style="margin: 12px 0 -6px; font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 24px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em">Narrowing with in</h2>
+
+      <p style="margin: 0">The <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.86em; padding: 2px 6px; border-radius: 5px; background: var(--surface2)">in</code> operator narrows by property name: in the true branch the compiler keeps the union members that have the property, and in the false branch the ones that do not. This is often shorter than writing a guard function, but it only works when the property names are distinct across the members of the union.</p>
+
+      <div style="padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--warn-bg); display: flex; flex-direction: column; gap: 4px; font-family: 'IBM Plex Sans', system-ui, sans-serif">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; color: var(--warn)">Low confidence</span>
+        <span style="font-size: 15px; line-height: 1.6">How <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.88em">in</code> narrows optional properties has changed between TypeScript versions. Check the release notes for your version before you rely on it. <sup style="font-size: 11px"><a href="#s7" style="color: var(--accent); text-decoration: none">[7]</a></sup></span>
+      </div>
+
+      <div style="padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); font-family: 'IBM Plex Sans', system-ui, sans-serif; font-size: 15px; line-height: 1.6; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 500; color: var(--text3)">Key takeaways</span>
+        <ul style="margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; color: var(--text2)">
+          <li><code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.88em">typeof</code> narrows primitives, and it cannot tell two object types apart.</li>
+          <li>A user-defined guard is a claim the compiler trusts without checking.</li>
+          <li><code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.88em">in</code> narrows by property name, so it needs distinct names across the union members.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top: 32px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text2); display: flex; flex-direction: column; gap: 2px">
+      <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3)">Sources</span>
+      <span id="s3">[3] TypeScript Handbook, Narrowing</span>
+      <span id="s7">[7] TypeScript 5.x release notes</span>
+    </div>
+
+    <div style="margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center">
+      <a href="Quiz.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 10px; background: var(--primary); color: var(--primary-fg); font-weight: 500; text-decoration: none">Take the quiz · 4 questions</a>
+      <a href="Lesson.dc.html" style="display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border: 1px solid var(--border2); border-radius: 10px; text-decoration: none">Next: Exhaustiveness checks</a>
+    </div>
+  </article>
+
+  <section id="thread" aria-label="Conversation about this lesson" style="background: var(--surface); border-top: 1px solid var(--border)">
+    <div style="max-width: 940px; margin: 0 auto; padding: 36px 28px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border2)">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text3)">Ask about this lesson · 2 answers</span>
+        <span style="font-size: 13px; color: var(--text3)">Answers use only this course's lessons and sources.</span>
+      </div>
+
+      <div style="align-self: flex-end; max-width: 70%; padding: 10px 14px; border-radius: 12px 12px 4px 12px; background: var(--primary); color: var(--primary-fg)">Why does <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.9em">in</code> narrowing not work when the property is optional?</div>
+
+      <div style="padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--accent-soft); line-height: 1.65; display: flex; flex-direction: column; gap: 10px">
+        <span>An optional property may be absent, so the compiler cannot rule out either union member. The type stays in both the true and the false branch.</span>
+        <span style="display: flex; flex-wrap: wrap; gap: 6px">
+          <a href="Lesson.dc.html" style="font-size: 12px; padding: 2px 8px; border: 1px solid var(--border2); border-radius: 999px; text-decoration: none; color: var(--accent); background: var(--bg)">Lesson 6 · Narrowing with in</a>
+          <a href="Lesson.dc.html" style="font-size: 12px; padding: 2px 8px; border: 1px solid var(--border2); border-radius: 999px; text-decoration: none; color: var(--accent); background: var(--bg)">Source 7</a>
+        </span>
+      </div>
+
+      <div style="align-self: flex-end; max-width: 70%; padding: 10px 14px; border-radius: 12px 12px 4px 12px; background: var(--primary); color: var(--primary-fg)">How does Deno treat these guards?</div>
+
+      <div style="padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--accent-soft); line-height: 1.65; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-weight: 600">Not covered in this course.</span>
+        <span style="color: var(--text2)">Nothing in the lessons or sources mentions Deno.</span>
+        <span><button type="button" style="height: 32px; padding: 0 12px; border: 1px solid var(--border2); border-radius: 8px; background: var(--bg); color: var(--text); font: inherit; font-size: 13px; font-weight: 500; cursor: pointer">Propose as extension</button></span>
+      </div>
+    </div>
+  </section>
+
+  <div style="position: sticky; bottom: 0; z-index: 20; background: var(--bg); border-top: 1px solid var(--border2); box-shadow: 0 -8px 24px rgba(11, 18, 32, 0.06)">
+    <div style="max-width: 940px; margin: 0 auto; padding: 12px 28px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 10px">
+      <sc-if value="{{aiPaused}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: var(--warn-bg); color: var(--text); font-size: 13px">
+          <span style="color: var(--warn); display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg></span>
+          <span>AI is paused. Chat and grading resume when you start the runner with <code style="font-family: 'IBM Plex Mono', monospace; font-size: 0.92em">school up</code>.</span>
+        </div>
+      </sc-if>
+      <div style="display: flex; gap: 10px; align-items: center; padding: 8px 8px 8px 14px; border: 1px solid var(--border2); border-radius: 12px; background: var(--surface)">
+        <span style="color: var(--accent); display: flex"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.5 7.2L4 20l1-4.5A8 8 0 1 1 21 12z"/></svg></span>
+        <label for="ask" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Ask about this lesson</label>
+        <input id="ask" type="text" disabled="{{aiPaused}}" placeholder="{{askPlaceholder}}" style="flex-grow: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--text); font: inherit; font-size: 15px; padding: 6px 0">
+        <a href="#thread" style="font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); text-decoration: none; white-space: nowrap">2 answers ↓</a>
+        <button type="button" aria-label="Send" disabled="{{aiPaused}}" style="flex-shrink: 0; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; background: var(--primary); color: var(--primary-fg); cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["light","dark"],"default":"light"},"readingFont":{"editor":"enum","options":["serif","sans"],"default":"serif"},"ai":{"editor":"enum","options":["available","paused"],"default":"available"},"contents":{"editor":"enum","options":["closed","open"],"default":"closed"},"$preview":{"width":1440,"height":1740}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const dark = this.state && this.state.dark !== undefined ? this.state.dark : (this.props.theme ?? 'light') === 'dark';
+    const serif = (this.props.readingFont ?? 'serif') === 'serif';
+    const paused = (this.props.ai ?? 'available') === 'paused';
+    return {
+      theme: dark ? 'dark' : 'light',
+      isDark: dark,
+      isLight: !dark,
+      toggleTheme: () => this.setState({ dark: !dark }),
+      proseFont: serif ? "'IBM Plex Serif', Georgia, serif" : "'IBM Plex Sans', system-ui, sans-serif",
+      aiPaused: paused,
+      askPlaceholder: paused ? 'Ask about this lesson (paused)' : 'Ask about this lesson',
+      menuOpen: (this.props.contents ?? 'closed') === 'open'
+    };
+  }
+}
+</script>
+</body>
+</html>

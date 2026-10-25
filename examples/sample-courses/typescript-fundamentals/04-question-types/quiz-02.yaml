@@ -1,0 +1,17 @@
+schemaVersion: 1
+id: q08
+title: "Question type: select all"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q08-1
+    type: mcq
+    text: "Which of these are primitive types?"
+    concepts: [primitives]
+    options:
+      - {text: "string", correct: true, explanation: "A primitive: an immutable value, not an object."}
+      - {text: "bigint", correct: true, explanation: "A primitive added for integers beyond the safe range of number."}
+      - {text: "object", correct: false, explanation: "The `object` type means any non-primitive value."}
+      - {text: "unknown", correct: false, explanation: "The top type: any value can be assigned to it, but it is not a primitive itself."}

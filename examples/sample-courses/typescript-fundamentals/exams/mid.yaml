@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: mid
+title: Mid-course exam
+duration_minutes: 30
+max_attempts: 3
+passing_percentage: 70
+shuffle: true
+limit_questions: 12
+domains:
+  - id: basics
+    title: Types you actually use
+    weight: 30
+    chapters: [01-basics]
+    concepts: [inference, union, const, assignment]
+  - id: narrowing
+    title: Narrowing and unions
+    weight: 70
+    chapters: [02-narrowing]
+    concepts: [typeof, "null", type-guard, user-defined-guard, discriminated-union, exhaustiveness]

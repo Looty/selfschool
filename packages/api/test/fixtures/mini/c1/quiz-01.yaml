@@ -1,0 +1,26 @@
+id: qz1
+title: "Check: shapes"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+questions:
+  - id: a-mcq
+    type: mcq
+    text: "Which statement is true?"
+    concepts: [shape]
+    options:
+      - {text: "Names decide", correct: false, explanation: "That is nominal typing."}
+      - {text: "Shapes decide", correct: true, explanation: "Structural typing."}
+      - {text: "Neither", correct: false, explanation: "One of them is right."}
+  - id: a-short
+    type: short
+    text: "What does typeof null give?"
+    concepts: [typeof]
+    answers: ["object"]
+  - id: a-open
+    type: open
+    text: "Explain structural typing."
+    concepts: [shape]
+    rubric: |
+      - Mentions shape.
+    sources: [1]

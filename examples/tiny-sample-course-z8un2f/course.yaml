@@ -1,0 +1,18 @@
+schemaVersion: 1
+id: tiny-sample-course-z8un2f
+title: Tiny Sample Course
+short_intro: A two-lesson course for testing zip and repo import.
+description: |
+  A minimal course about making a cup of tea. It exists to test dragging a zip into the app: it has two
+  lessons, two quizzes with four question types, and one exam.
+level: Beginner
+hue: teal
+monogram: TS
+tags: [sample, test]
+chapters:
+  - dir: 01-basics
+    title: Basics
+  - dir: 02-details
+    title: Details
+exams:
+  - {id: final, file: exams/final.yaml}

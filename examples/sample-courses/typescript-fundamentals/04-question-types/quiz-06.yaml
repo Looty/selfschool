@@ -1,0 +1,23 @@
+schemaVersion: 1
+id: q12
+title: "Question type: put in order"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q12-1
+    type: fill
+    text: "Put the steps of narrowing a discriminated union in the order you do them."
+    concepts: [discriminated-union, exhaustiveness]
+    template: |
+      {{1}}
+      {{2}}
+      {{3}}
+      {{4}}
+    chips:
+      - {text: "Give every member the same literal-typed field", slot: 1, explanation: "The shared discriminant has to exist before anything can check it."}
+      - {text: "Switch on that field", slot: 2, explanation: "Each case tells the compiler which member it is looking at."}
+      - {text: "Use members specific to the narrowed type", slot: 3, explanation: "Inside a case the compiler allows what only that member has."}
+      - {text: "Assign the leftover value to never in default", slot: 4, explanation: "Last, so a member added later without a case becomes a compile error."}
+      - {text: "Cast the value with as", explanation: "A cast silences the compiler instead of narrowing, so it is not a step of this process."}

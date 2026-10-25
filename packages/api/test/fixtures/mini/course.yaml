@@ -1,0 +1,15 @@
+schemaVersion: 1
+id: mini
+title: Mini Course
+short_intro: A tiny fixture course.
+description: |
+  Used by the api tests.
+level: Beginner
+tags: [fixture]
+chapters:
+  - dir: c1
+    title: Chapter One
+  - dir: c2
+    title: Chapter Two
+exams:
+  - {id: final, file: exams/final.yaml, after: c2}

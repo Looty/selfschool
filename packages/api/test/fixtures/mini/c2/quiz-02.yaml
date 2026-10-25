@@ -1,0 +1,18 @@
+id: qz2
+title: "Check: chapter two"
+passing_percentage: 50
+questions:
+  - id: b-one
+    type: mcq
+    text: "Pick the first."
+    concepts: [pick]
+    options:
+      - {text: "First", correct: true, explanation: "Yes."}
+      - {text: "Second", correct: false, explanation: "No."}
+  - id: b-two
+    type: mcq
+    text: "Pick the second."
+    concepts: [pick]
+    options:
+      - {text: "First", correct: false, explanation: "No."}
+      - {text: "Second", correct: true, explanation: "Yes."}

@@ -1,0 +1,1 @@
+ALTER TABLE `extension` ADD `budget_minutes` integer DEFAULT 60 NOT NULL;

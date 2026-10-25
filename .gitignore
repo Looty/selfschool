@@ -1,0 +1,16 @@
+.env
+.selfschool/
+extensions/
+node_modules/
+dist/
+*.tsbuildinfo
+*.db
+*.db-shm
+*.db-wal
+bin/
+__pycache__/
+.venv/
+*.log
+
+# fake courses made by `pnpm --filter @selfschool/api stress --live` (removed automatically)
+courses/zz-stress-*/

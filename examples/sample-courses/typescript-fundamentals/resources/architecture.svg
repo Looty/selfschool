@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 240" width="640" height="240" role="img" aria-label="Request flow: a client reaches one load balancer, which spreads requests over two app servers, which read from a primary database with a replica.">
+  <rect width="640" height="240" fill="#f4f4f1"/>
+  <!-- percent coordinates in quiz-09.yaml are measured on this 640 x 240 canvas -->
+
+  <g fill="none" stroke="#5f5e5a" stroke-width="1.5">
+    <path d="M120 120H170"/>
+    <path d="M290 120L350 55"/>
+    <path d="M290 120L350 185"/>
+    <path d="M460 55L520 55"/>
+    <path d="M460 55L520 185"/>
+    <path d="M460 185L520 55"/>
+    <path d="M460 185L520 185"/>
+  </g>
+  <g fill="#ffffff" stroke="#2c2c2a" stroke-width="1.5">
+    <rect x="20" y="95" width="100" height="50" rx="6"/>
+    <rect x="170" y="95" width="120" height="50" rx="6"/>
+    <rect x="350" y="30" width="110" height="50" rx="6"/>
+    <rect x="350" y="160" width="110" height="50" rx="6"/>
+    <rect x="520" y="30" width="100" height="50" rx="6"/>
+    <rect x="520" y="160" width="100" height="50" rx="6"/>
+  </g>
+  <g fill="#2c2c2a" font-family="system-ui, sans-serif" font-size="14" text-anchor="middle">
+    <text x="70" y="125">Client</text>
+    <text x="230" y="125">Load balancer</text>
+    <text x="405" y="60">App server 1</text>
+    <text x="405" y="190">App server 2</text>
+    <text x="570" y="60">DB primary</text>
+    <text x="570" y="190">DB replica</text>
+  </g>
+</svg>

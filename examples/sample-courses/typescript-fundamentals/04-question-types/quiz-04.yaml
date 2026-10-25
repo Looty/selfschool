@@ -1,0 +1,15 @@
+schemaVersion: 1
+id: q10
+title: "Question type: open-ended"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q10-1
+    type: open
+    text: "Why does a `never` check in the default branch of a `switch` make it exhaustive?"
+    concepts: [exhaustiveness, never]
+    rubric: |
+      - Says that once every union member is handled, the value left in the default branch has type never.
+      - Says that assigning that value to a never variable becomes a compile error when a new member is added without a case.

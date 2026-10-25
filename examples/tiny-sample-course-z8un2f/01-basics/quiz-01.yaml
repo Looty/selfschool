@@ -1,0 +1,16 @@
+schemaVersion: 1
+id: q01
+title: "Check: water and leaves"
+questions:
+  - id: q01-1
+    type: mcq
+    text: "Which tea is brewed with cooler water to avoid bitterness?"
+    concepts: [water-temperature]
+    options:
+      - {text: "Green tea", correct: true, explanation: "Hot water makes green tea bitter, so it is brewed cooler."}
+      - {text: "Black tea", correct: false, explanation: "Black tea is brewed with water just off the boil."}
+  - id: q01-2
+    type: short
+    text: "Name one of the three things tea needs besides hot water."
+    concepts: [ingredients]
+    answers: ["leaves", "tea leaves", "time"]

@@ -1,0 +1,18 @@
+{
+  "v": 3,
+  "createdOnFiles": { "v": 1, "at": "2026-10-20T12:00:00Z" },
+  "title": "Selfschool UI Direction",
+  "launch": { "view": "canvas" },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": { "x": 0, "y": 0, "w": 1280, "h": 1180, "title": "1 Dashboard", "expand": "fill" },
+    "Course.dc.html": { "x": 1360, "y": 0, "w": 1280, "h": 1060, "title": "2 Course page", "expand": "fill" },
+    "Lesson.dc.html": { "x": 2720, "y": 0, "w": 1440, "h": 1740, "title": "3 Lesson: pinned ask box, thread below", "expand": "fill" },
+    "Quiz.dc.html": { "x": 0, "y": 1860, "w": 1280, "h": 1560, "title": "4 Quiz", "expand": "fill" },
+    "Exam.dc.html": { "x": 1360, "y": 1860, "w": 1280, "h": 1100, "title": "5 Exam result", "expand": "fill" },
+    "Settings.dc.html": { "x": 2720, "y": 1860, "w": 1280, "h": 1080, "title": "6 Settings", "expand": "fill" }
+  },
+  "order": ["Main.dc.html", "Course.dc.html", "Lesson.dc.html", "Quiz.dc.html", "Exam.dc.html", "Settings.dc.html"],
+  "notes": {},
+  "designSystems": []
+}

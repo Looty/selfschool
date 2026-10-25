@@ -1,0 +1,29 @@
+schemaVersion: 1
+id: q15
+title: "Question type: click the image"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q15-1
+    type: hotspot
+    text: "Click the single point of failure in this setup."
+    concepts: [availability]
+    image: resources/architecture.svg
+    alt: "Request flow: a client reaches one load balancer, which spreads requests over two app servers, which read from a primary database with a replica."
+    regions:
+      - {name: "Load balancer", correct: true, shape: rect, x: 26.5, y: 39.5, w: 19, h: 21, explanation: "Every request goes through this one box, and there is no second copy to take over if it fails."}
+      - {name: "App servers", shape: rect, x: 54.5, y: 12.5, w: 17.5, h: 75, explanation: "There are two of them behind the load balancer, so one can fail while the other keeps serving."}
+      - {name: "Database", shape: rect, x: 81, y: 12.5, w: 18, h: 75, explanation: "The primary has a replica that can be promoted, so the data layer is not a single point of failure here."}
+  - id: q15-2
+    type: hotspot
+    text: "Click both database nodes."
+    concepts: [availability, replication]
+    image: resources/architecture.svg
+    alt: "Request flow: a client reaches one load balancer, which spreads requests over two app servers, which read from a primary database with a replica."
+    regions:
+      - {name: "DB primary", correct: true, shape: ellipse, x: 89, y: 23, rx: 9.5, ry: 13, explanation: "Takes the writes."}
+      - {name: "DB replica", correct: true, shape: ellipse, x: 89, y: 77, rx: 9.5, ry: 13, explanation: "Holds a copy and can be promoted if the primary fails."}
+      - {name: "App server 1", shape: rect, x: 54.5, y: 12.5, w: 17.5, h: 21, explanation: "An app server reads from the database but is not part of it."}
+      - {name: "App server 2", shape: rect, x: 54.5, y: 67, w: 17.5, h: 21, explanation: "An app server reads from the database but is not part of it."}

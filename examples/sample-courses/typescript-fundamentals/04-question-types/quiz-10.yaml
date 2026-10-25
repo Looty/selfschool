@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: q16
+title: "Question type: match the pairs"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q16-1
+    type: match
+    text: "Match each compiler error to its cause."
+    concepts: [compiler-errors, strict-mode]
+    pairs:
+      - {left: "TS2322", right: "A value of the wrong type was assigned", explanation: "The message reads \"Type 'string' is not assignable to type 'number'\"."}
+      - {left: "TS2339", right: "A property does not exist on the type", explanation: "Often a union that has not been narrowed yet, so the property is missing on one member."}
+      - {left: "TS7006", right: "A parameter has no type and none can be inferred", explanation: "Under noImplicitAny a parameter without an annotation or a contextual type is an error."}
+      - {left: "TS2531", right: "A value that may be null is used", explanation: "\"Object is possibly 'null'\": narrow it before you use it."}
+    distractors:
+      - "A module could not be found"

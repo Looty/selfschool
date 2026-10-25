@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: q13
+title: "Question type: sort into groups"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q13-1
+    type: sort
+    text: "Where does each line fail, if at all?"
+    concepts: [type-errors, unknown, assertions]
+    buckets: ["Compile error", "Runtime error", "Fine"]
+    items:
+      - {text: 'const n: number = "5";', bucket: "Compile error", explanation: "A string is not assignable to number, and the compiler reports it before the code runs."}
+      - {text: 'JSON.parse("{")', bucket: "Runtime error", explanation: "The call type-checks, because any string is accepted. The malformed JSON throws a SyntaxError only when it runs."}
+      - {text: "const xs = [] as string[];", bucket: "Fine", explanation: "An empty array can be asserted to string[]; nothing fails at compile time or at run time."}
+      - {text: "const a: string[] = []; a[5].toUpperCase();", bucket: "Runtime error", explanation: "By default indexing is typed as string, so it compiles, but a[5] is undefined when it runs."}
+      - {text: "let x: unknown = 1; x.toFixed();", bucket: "Compile error", explanation: "A value of type unknown must be narrowed before you use its members."}

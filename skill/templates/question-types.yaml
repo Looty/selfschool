@@ -1,0 +1,87 @@
+# One valid example of every non-basic question type, on purpose from different subjects (none is tied to
+# programming). Copy the shape, replace the content with the lesson's own subject.
+# These go inside `questions:` of a quiz file (see quiz.yaml for mcq, short and open).
+# Every `explanation` says WHY, not just "correct". Every id is unique across the package.
+# `code:` is a general "show this text block" field: a snippet, a table, a quotation, a clause, a recipe step.
+
+- id: q01-4
+  type: fill                          # drag chips into numbered gaps; also used for "put in order"
+  text: "Complete the sentence about photosynthesis."
+  concepts: [photosynthesis]
+  template: |
+    Plants use {{1}} and water to make glucose, and release {{2}} as a by-product.
+  chips:                              # exactly one chip per slot, plus 1-2 distractors (no `slot`)
+    - {text: "carbon dioxide", slot: 1, explanation: "The carbon in glucose comes from CO2 taken in through the leaves."}
+    - {text: "oxygen", slot: 2, explanation: "Splitting water releases O2, which leaves through the stomata."}
+    - {text: "nitrogen", explanation: "Plants need nitrogen to build proteins, but it is not an input of photosynthesis."}
+
+- id: q01-5
+  type: sort                          # classify items into buckets (2-6 buckets, 2-12 items)
+  text: "Which kind of source is each of these for a history essay?"
+  concepts: [historical-sources]
+  buckets: ["Primary source", "Secondary source"]
+  items:
+    - {text: "A soldier's letter written at the front", bucket: "Primary source", explanation: "Created at the time by someone who was there."}
+    - {text: "A textbook chapter on the war", bucket: "Secondary source", explanation: "Written later, interpreting primary evidence."}
+    - {text: "A 1944 newspaper report", bucket: "Primary source", explanation: "A contemporary account, though it may be biased."}
+
+- id: q01-6
+  type: spot                          # click the faulty line(s); `correct` = 1-based line numbers of `code`
+  text: "Which line of this recipe would make the bread fail?"
+  concepts: [baking]
+  code: |
+    Mix 500 g flour with 10 g salt.
+    Add 7 g dried yeast and 320 ml water.
+    Pour boiling water over the yeast to wake it up.
+    Knead for 10 minutes, then let it rise.
+  correct: [3]
+  explanation: "Boiling water kills yeast. Warm water, around body temperature, activates it."
+
+- id: q01-7
+  type: spot
+  diff: true                          # `code` is a diff: "+" added, "-" removed, leading space = context
+  text: "A colleague edited this contract clause. Which added lines create a risk for the client?"
+  concepts: [contracts]
+  code: |2                            # `|2` keeps the leading space of context lines
+     The supplier delivers within 30 days of the order.
+    -Late delivery entitles the client to a 5% refund per week.
+    +Late delivery may entitle the client to a refund at the supplier's discretion.
+     Payment is due on delivery.
+    +Payment is due 14 days before delivery.
+  correct: [3, 5]
+  explanation: "'May' and 'at the supplier's discretion' remove the client's right to a refund, and paying before delivery removes their leverage."
+
+- id: q01-8
+  type: match                         # one-to-one pairs (2-8) plus up to 4 right-hand distractors
+  text: "Match each musical term to its meaning."
+  concepts: [music-theory]
+  pairs:
+    - {left: "Allegro", right: "Fast and lively", explanation: "From Italian for 'cheerful'; a standard tempo marking."}
+    - {left: "Piano", right: "Soft", explanation: "Dynamic marking; 'pianissimo' is very soft."}
+    - {left: "Crescendo", right: "Gradually louder", explanation: "The opposite is decrescendo or diminuendo."}
+  distractors:
+    - "Gradually slower"
+
+- id: q01-9
+  type: trace                         # fill a table of values step by step
+  text: "What is the balance and the overdraft fee total after each transaction? The account starts at 100 with no fees."
+  concepts: [accounting]
+  code: |
+    1. Withdraw 130 (overdraft fee: 15 when the balance goes below 0)
+    2. Deposit 50
+  variables: [balance, fees]          # 1-5 variables
+  steps:                              # up to 8; `values` has every variable; `given` pre-fills some cells
+    - {label: "Start", values: {balance: 100, fees: 0}, given: [balance, fees]}
+    - {label: "After 1", values: {balance: -45, fees: 15}}
+    - {label: "After 2", values: {balance: 5, fees: 15}}
+  explanation: "100 - 130 = -30, then the 15 fee makes it -45. The deposit adds 50, giving 5; fees already paid stay at 15."
+
+- id: q01-10
+  type: hotspot                       # click a region of an image under resources/ (percent coordinates)
+  text: "Click the part of the cell where most ATP is produced."
+  concepts: [cell-biology]
+  image: resources/animal-cell.svg    # must exist; measure coordinates on the real image
+  alt: "Diagram of an animal cell showing the nucleus in the centre, mitochondria near the edge and the cell membrane around it."
+  regions:                            # shape: rect (x, y, w, h) | ellipse (x, y, rx, ry) | poly (points)
+    - {name: "Mitochondrion", correct: true, shape: ellipse, x: 70, y: 60, rx: 9, ry: 6, explanation: "Cellular respiration in the mitochondria makes most of the cell's ATP."}
+    - {name: "Nucleus", shape: ellipse, x: 40, y: 45, rx: 14, ry: 14, explanation: "Holds the DNA; it does not produce ATP."}

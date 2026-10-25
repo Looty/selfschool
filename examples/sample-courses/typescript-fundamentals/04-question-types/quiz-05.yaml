@@ -1,0 +1,21 @@
+schemaVersion: 1
+id: q11
+title: "Question type: fill the gaps"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q11-1
+    type: fill
+    text: "Complete the user-defined type guard so callers get `string` inside the `if`."
+    concepts: [type-guard, user-defined-guard]
+    template: |
+      function isString(x: unknown): {{1}} {
+        return {{2}};
+      }
+    chips:
+      - {text: "x is string", slot: 1, explanation: "A type predicate: when the function returns true, the compiler narrows the argument to string."}
+      - {text: 'typeof x === "string"', slot: 2, explanation: "The runtime check that backs the predicate. The compiler trusts it without verifying it."}
+      - {text: "boolean", explanation: "This compiles, but a plain boolean return tells callers nothing, so no narrowing happens."}
+      - {text: "x instanceof string", explanation: "string is a type, not a constructor, so instanceof is an error. Primitives are checked with typeof."}

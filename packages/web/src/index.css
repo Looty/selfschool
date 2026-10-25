@@ -1,0 +1,261 @@
+@import "tailwindcss";
+
+/* Design tokens from the approved UI boards (Main.dc.html `.app{...}` blocks). */
+/*
+ * Themes. Each block is scoped to any element with that data-theme (not only <html>), so the Settings previews can
+ * show a theme without applying it. <html> also carries data-mode="light|dark" for rules that only care about
+ * light versus dark (code highlighting, selection colour).
+ *   light, dark         the approved boards
+ *   *-colorblind        "right" is blue and "wrong" is orange instead of green and red (icons and text still carry meaning)
+ *   soft-dark           dark with reduced contrast for low light
+ */
+:root,
+[data-theme="light"],
+[data-theme="light-colorblind"] {
+  --canvas: #f3f5f8;
+  --bg: #ffffff;
+  --surface: #f8f9fb;
+  --surface2: #eef1f5;
+  --border: #e2e6ec;
+  --border2: #cdd3dc;
+  --text: #0b1220;
+  --text2: #475467;
+  --text3: #5f6a7d;
+  --primary: #0b1220;
+  --primary-fg: #ffffff;
+  --accent: #4c3fd9;
+  --accent-fg: #ffffff;
+  --accent-soft: #efedfd;
+  --ok: #0f7b45;
+  --ok-bg: #ecfaf2;
+  --bad: #c0262d;
+  --bad-bg: #fdefef;
+  --warn: #a15c07;
+  --warn-bg: #fef6e4;
+  --hue-blue: #1f6fd0;
+  --hue-blue-bg: #e9f2fd;
+  --hue-blue-ink: #14529e;
+  --hue-orange: #c2570c;
+  --hue-orange-bg: #fff1e5;
+  --hue-orange-ink: #8f3f08;
+  --hue-teal: #0b7a6f;
+  --hue-teal-bg: #e3f5f2;
+  --hue-teal-ink: #085a52;
+  --hue-pink: #b8255f;
+  --hue-pink-bg: #fceaf1;
+  --hue-pink-ink: #8a1a47;
+  color-scheme: light;
+}
+
+[data-theme="light-colorblind"] {
+  --ok: #0b5cad;
+  --ok-bg: #e8f1fb;
+  --bad: #b4470a;
+  --bad-bg: #fdf0e3;
+  --warn: #7d6200;
+  --warn-bg: #fbf5d4;
+}
+
+[data-theme="dark"],
+[data-theme="dark-colorblind"] {
+  --canvas: #090b10;
+  --bg: #0f131b;
+  --surface: #141925;
+  --surface2: #1b2130;
+  --border: #232a39;
+  --border2: #333c4f;
+  --text: #e9edf5;
+  --text2: #a3adbd;
+  --text3: #8892a4;
+  --primary: #e9edf5;
+  --primary-fg: #0b1220;
+  --accent: #9a8cff;
+  --accent-fg: #120c33;
+  --accent-soft: #221c4f;
+  --ok: #3ddc84;
+  --ok-bg: #0c2418;
+  --bad: #ff7b7b;
+  --bad-bg: #2c1417;
+  --warn: #f5b73b;
+  --warn-bg: #2a1f0b;
+  --hue-blue: #6aa8ff;
+  --hue-blue-bg: #0f2038;
+  --hue-blue-ink: #9cc4ff;
+  --hue-orange: #fba45c;
+  --hue-orange-bg: #2b1a0c;
+  --hue-orange-ink: #fdc08f;
+  --hue-teal: #34d3c0;
+  --hue-teal-bg: #0b2420;
+  --hue-teal-ink: #7be5d6;
+  --hue-pink: #f58bb4;
+  --hue-pink-bg: #2b1220;
+  --hue-pink-ink: #f9b3cd;
+  color-scheme: dark;
+}
+
+[data-theme="dark-colorblind"] {
+  --ok: #6cb6ff;
+  --ok-bg: #0d2540;
+  --bad: #ffa657;
+  --bad-bg: #33200c;
+  --warn: #f2e05a;
+  --warn-bg: #2b2708;
+}
+
+[data-theme="soft-dark"] {
+  --canvas: #1c2128;
+  --bg: #22272e;
+  --surface: #2b313a;
+  --surface2: #343b45;
+  --border: #373e47;
+  --border2: #47505b;
+  --text: #adbac7;
+  --text2: #a5b1be;
+  --text3: #98a4b2;
+  --primary: #adbac7;
+  --primary-fg: #22272e;
+  --accent: #a99cf7;
+  --accent-fg: #1d1840;
+  --accent-soft: #2c2a50;
+  --ok: #6bc46d;
+  --ok-bg: #1d3326;
+  --bad: #f47067;
+  --bad-bg: #3b2527;
+  --warn: #daaa3f;
+  --warn-bg: #382d12;
+  --hue-blue: #6cb0f5;
+  --hue-blue-bg: #1b2d45;
+  --hue-blue-ink: #9cc8f8;
+  --hue-orange: #e8975a;
+  --hue-orange-bg: #3a2a1a;
+  --hue-orange-ink: #f0b88c;
+  --hue-teal: #4fc8b8;
+  --hue-teal-bg: #1a3532;
+  --hue-teal-ink: #82ddd0;
+  --hue-pink: #e88bb0;
+  --hue-pink-bg: #3a2231;
+  --hue-pink-ink: #f0b0cc;
+  color-scheme: dark;
+}
+
+/* Expose tokens as Tailwind utilities (bg-canvas, text-text2, border-border, ...). */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface2: var(--surface2);
+  --color-border: var(--border);
+  --color-border2: var(--border2);
+  --color-text: var(--text);
+  --color-text2: var(--text2);
+  --color-text3: var(--text3);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-bad: var(--bad);
+  --color-bad-bg: var(--bad-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-hue-blue: var(--hue-blue);
+  --color-hue-blue-bg: var(--hue-blue-bg);
+  --color-hue-blue-ink: var(--hue-blue-ink);
+  --color-hue-orange: var(--hue-orange);
+  --color-hue-orange-bg: var(--hue-orange-bg);
+  --color-hue-orange-ink: var(--hue-orange-ink);
+  --color-hue-teal: var(--hue-teal);
+  --color-hue-teal-bg: var(--hue-teal-bg);
+  --color-hue-teal-ink: var(--hue-teal-ink);
+  --color-hue-pink: var(--hue-pink);
+  --color-hue-pink-bg: var(--hue-pink-bg);
+  --color-hue-pink-ink: var(--hue-pink-ink);
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-serif: "IBM Plex Serif", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+/* Per-course hue: set data-hue on a course card / page root, then use text-hue, bg-hue-bg, text-hue-ink. */
+[data-hue="blue"] { --hue: var(--hue-blue); --hue-bg: var(--hue-blue-bg); --hue-ink: var(--hue-blue-ink); }
+[data-hue="orange"] { --hue: var(--hue-orange); --hue-bg: var(--hue-orange-bg); --hue-ink: var(--hue-orange-ink); }
+[data-hue="teal"] { --hue: var(--hue-teal); --hue-bg: var(--hue-teal-bg); --hue-ink: var(--hue-teal-ink); }
+[data-hue="pink"] { --hue: var(--hue-pink); --hue-bg: var(--hue-pink-bg); --hue-ink: var(--hue-pink-ink); }
+
+@theme inline {
+  --color-hue: var(--hue);
+  --color-hue-bg: var(--hue-bg);
+  --color-hue-ink: var(--hue-ink);
+  --radius-control: 8px;
+  --radius-button: 10px;
+  --radius-card: 12px;
+}
+
+/* Dot-grid surface (course monogram signature). Set --dot-opacity / --dot-mask on the element. */
+.dot-grid { position: relative; overflow: hidden; background: var(--hue-bg); }
+.dot-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--dot-opacity, 0.35);
+  background-image: radial-gradient(circle, var(--hue) 1px, transparent 1.5px);
+  background-size: 14px 14px;
+  -webkit-mask-image: var(--dot-mask, none);
+  mask-image: var(--dot-mask, none);
+  pointer-events: none;
+}
+
+/* Visible focus: ink everywhere, accent for tutor controls (add .tutor). */
+:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+.tutor:focus-visible { outline-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* Loading indicators. A spinner is the one thing that must keep moving to say "working", so it and the
+   shimmer opt back in under reduced motion (the shimmer as a slow fade instead of a sweep). */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes shimmer { 0% { background-position: 120% 0; } 100% { background-position: -120% 0; } }
+@keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+.spinner {
+  display: inline-block; flex: none; width: 1em; height: 1em; box-sizing: border-box;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent); border-top-color: currentColor; border-radius: 50%;
+  animation: spin 0.8s linear infinite !important;
+}
+.shimmer {
+  --shimmer-base: var(--surface2);
+  --shimmer-hi: color-mix(in srgb, var(--text) 14%, var(--surface2));
+  background: linear-gradient(90deg, var(--shimmer-base) 30%, var(--shimmer-hi) 50%, var(--shimmer-base) 70%);
+  background-size: 250% 100%;
+  animation: shimmer 1.5s ease-in-out infinite !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .shimmer { background: var(--shimmer-base); animation: breathe 2.4s ease-in-out infinite !important; }
+}
+
+html {
+  background: var(--canvas);
+  /* Reserve the scrollbar's width so expanding a section doesn't shift the page sideways. */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Settings > Content width: scales the max width of the lesson and course pages (narrow 0.98, medium 1.25, wide 1.6 times the 940px lesson column). */
+:root { --content-scale: 1.25; }
+:root[data-content-width="narrow"] { --content-scale: 0.98; }
+:root[data-content-width="wide"] { --content-scale: 1.6; }
+
+/* "Saved" toast (src/ui/Toast.tsx): slides up and fades in; skipped for people who ask for less motion. */
+@keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.toast-in { animation: toast-in 160ms ease-out; }
+@media (prefers-reduced-motion: reduce) { .toast-in { animation: none; } }

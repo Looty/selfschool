@@ -1,0 +1,35 @@
+schemaVersion: 1
+id: q14
+title: "Question type: spot the line"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q14-1
+    type: spot
+    text: "Which line makes this type guard unsafe?"
+    concepts: [type-guard, user-defined-guard]
+    code: |
+      type Cat = { name: string; purr(): void };
+      type Dog = { name: string; bark(): void };
+      function isCat(p: Cat | Dog): p is Cat {
+        return p.name !== undefined;
+      }
+    correct: [4]
+    explanation: "Both Cat and Dog have a name, so this check is true for a dog too. The compiler trusts the `p is Cat` predicate without verifying it, so a dog would be treated as a cat. Check something only a Cat has, such as `\"purr\" in p`."
+  - id: q14-2
+    type: spot
+    diff: true
+    text: "Review this change. Which added lines weaken type checking?"
+    concepts: [any, type-assertions]
+    code: |2
+       function total(items: Item[]) {
+      -  let sum = 0;
+      +  let sum: any = 0;
+         for (const i of items) sum += i.price;
+      -  return sum;
+      +  return sum as number;
+       }
+    correct: [3, 6]
+    explanation: "`sum: any` switches checking off for the variable, and `as number` then hides that from the caller. The original, `let sum = 0`, was already inferred as number, so both added lines make the code less safe for no gain."

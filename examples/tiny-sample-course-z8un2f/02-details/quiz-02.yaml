@@ -1,0 +1,24 @@
+schemaVersion: 1
+id: q02
+title: "Check: steeping"
+questions:
+  - id: q02-1
+    type: fill
+    text: "Put the steps in order."
+    concepts: [steps]
+    template: |
+      {{1}}
+      {{2}}
+      {{3}}
+    chips:
+      - {text: "Boil the water", slot: 1, explanation: "Hot water comes first."}
+      - {text: "Add the leaves and pour", slot: 2, explanation: "The leaves need the water to release flavour."}
+      - {text: "Wait, then remove the leaves", slot: 3, explanation: "Leaving them in too long makes the tea bitter."}
+      - {text: "Add milk to the empty cup", explanation: "Not a step of brewing tea."}
+  - id: q02-2
+    type: match
+    text: "Match each tea to its steeping time."
+    concepts: [steeping-time]
+    pairs:
+      - {left: "Green tea", right: "About two minutes", explanation: "Short, to stay mild."}
+      - {left: "Black tea", right: "About four minutes", explanation: "Longer, for a fuller taste."}

@@ -1,0 +1,13 @@
+schemaVersion: 1
+id: q09
+title: "Question type: short answer"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q09-1
+    type: short
+    text: "Which operator checks whether a value was created by a given class?"
+    concepts: [instanceof]
+    answers: ["instanceof", "the instanceof operator"]

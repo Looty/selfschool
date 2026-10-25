@@ -1,0 +1,18 @@
+schemaVersion: 1
+id: q07
+title: "Question type: multiple choice"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q07-1
+    type: mcq
+    text: "What type does TypeScript infer for `n` here?"
+    code: |
+      const n = 5;
+    concepts: [inference, const]
+    options:
+      - {text: "number", correct: false, explanation: "`let n = 5` would widen to number. A const cannot change, so it keeps the narrower type."}
+      - {text: "5", correct: true, explanation: "A const initialized with a literal keeps the literal type 5."}
+      - {text: "any", correct: false, explanation: "TypeScript infers a precise type from the initializer; any only appears when it has nothing to infer from."}

@@ -1,0 +1,81 @@
+# Dev setup: sources are bind-mounted, node_modules live in named volumes (the host's are for a
+# different OS), and web/api hot-reload. The AI runner is NOT here; it runs on the host and
+# connects to the published api port (`school up`).
+name: selfschool
+
+x-node: &node
+  image: selfschool-node
+  build:
+    context: .
+    dockerfile: docker/node.Dockerfile
+  working_dir: /app
+  volumes:
+    - .:/app
+    - node_modules:/app/node_modules
+    - node_modules_shared:/app/packages/shared/node_modules
+    - node_modules_api:/app/packages/api/node_modules
+    - node_modules_web:/app/packages/web/node_modules
+    - node_modules_runner:/app/packages/runner/node_modules
+    - node_modules_cli:/app/packages/cli/node_modules
+    - pnpm_store:/root/.local/share/pnpm
+
+services:
+  # One-shot: installs dependencies into the shared volumes before web/api start.
+  install:
+    <<: *node
+    command: sh -c "corepack enable && pnpm install --frozen-lockfile"
+    restart: "no"
+
+  api:
+    <<: *node
+    command: sh -c "corepack enable && pnpm --filter @selfschool/api dev"
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    environment:
+      PORT: "3001"
+      SELFSCHOOL_DB: /data/selfschool.db
+      SELFSCHOOL_COURSES_DIR: /courses
+    volumes:
+      - .:/app
+      # the selfschool-courses repo, cloned next to this one (override with COURSES_PATH)
+      - ${COURSES_PATH:-../selfschool-courses}:/courses
+      - node_modules:/app/node_modules
+      - node_modules_shared:/app/packages/shared/node_modules
+      - node_modules_api:/app/packages/api/node_modules
+      - node_modules_web:/app/packages/web/node_modules
+      - node_modules_runner:/app/packages/runner/node_modules
+      - node_modules_cli:/app/packages/cli/node_modules
+      - pnpm_store:/root/.local/share/pnpm
+      - selfschool-data:/data
+    ports:
+      - "127.0.0.1:${API_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    <<: *node
+    command: sh -c "corepack enable && pnpm --filter @selfschool/web dev"
+    depends_on:
+      install:
+        condition: service_completed_successfully
+    environment:
+      API_PROXY_TARGET: http://api:3001
+      CHOKIDAR_USEPOLLING: "1"
+      # Vite listens on the same port the host publishes, so the URL it prints is the one that works.
+      WEB_PORT: ${WEB_PORT:-5174}
+    ports:
+      - "127.0.0.1:${WEB_PORT:-5174}:${WEB_PORT:-5174}"
+
+volumes:
+  selfschool-data:
+  node_modules:
+  node_modules_shared:
+  node_modules_api:
+  node_modules_web:
+  node_modules_runner:
+  node_modules_cli:
+  pnpm_store:

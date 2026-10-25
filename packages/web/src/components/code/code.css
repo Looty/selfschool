@@ -1,0 +1,21 @@
+/* Shared code block (lessons, quiz and exam questions): shiki tokens switch with the theme via CSS variables. */
+.code-block {
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  line-height: 1.65;
+  overflow-x: auto;
+  tab-size: 2;
+}
+.code-block pre,
+.code-block code { margin: 0; padding: 0; background: transparent; font: inherit; }
+.code-block .shiki { background: transparent !important; }
+.code-block .shiki span { color: var(--shiki-light); }
+:root[data-mode="dark"] .code-block .shiki span { color: var(--shiki-dark); }
+/* Comments read as secondary text in both themes (contrast per docs/ui.md). */
+:root .code-block .shiki span[style*="#6A737D"],
+:root .code-block .shiki span[style*="#6a737d"] { color: var(--text3); }

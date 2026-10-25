@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 190" width="560" height="190" role="img" aria-label="A Shape union split by its kind property into Circle and Square">
+  <style>
+    text { font: 14px ui-monospace, Consolas, monospace; fill: #0b1220; }
+    rect { fill: #e9f2fd; stroke: #1f6fd0; stroke-width: 1.5; rx: 8; }
+    path { fill: none; stroke: #475467; stroke-width: 1.5; marker-end: url(#a); }
+  </style>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:#475467;stroke:none;marker-end:none"/></marker></defs>
+  <rect x="190" y="14" width="180" height="44"/>
+  <text x="280" y="42" text-anchor="middle">Shape (union)</text>
+  <path d="M250 58 L130 120"/>
+  <path d="M310 58 L430 120"/>
+  <text x="170" y="92" text-anchor="middle">kind === "circle"</text>
+  <text x="400" y="92" text-anchor="middle">kind === "square"</text>
+  <rect x="40" y="122" width="180" height="44"/>
+  <text x="130" y="150" text-anchor="middle">Circle { radius }</text>
+  <rect x="340" y="122" width="180" height="44"/>
+  <text x="430" y="150" text-anchor="middle">Square { sideLength }</text>
+</svg>

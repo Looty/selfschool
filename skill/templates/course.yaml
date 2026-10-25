@@ -1,0 +1,18 @@
+schemaVersion: 1
+id: subject-slug-k3x9f2          # from `school new-id "<title>"`: slug + random suffix, unique; never changes after first publish
+title: Course Title
+short_intro: One-line pitch.
+description: |
+  Markdown description: who it is for, what they will be able to do, prerequisites.
+level: Beginner                  # Beginner | Intermediate | Advanced
+hue: blue                        # optional: blue | orange | teal | pink (default derived from id)
+monogram: AB                     # optional: 2-4 letters on covers and bands (default: title initials)
+tags: [tag1, tag2]
+chapters:                        # order here = reading order; dirs are never renamed
+  - dir: 01-first-chapter
+    title: First Chapter
+  - dir: 02-second-chapter
+    title: Second Chapter
+exams:                           # blueprints, see exam.yaml
+  - {id: mid, file: exams/mid.yaml, after: 01-first-chapter}
+  - {id: final, file: exams/final.yaml}

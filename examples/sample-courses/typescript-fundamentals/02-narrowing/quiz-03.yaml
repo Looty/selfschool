@@ -1,0 +1,45 @@
+schemaVersion: 1
+id: q06
+title: "Check: type guards"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q06-1
+    type: mcq
+    text: "Which line is a type error?"
+    code: |
+      const n = 5;
+      n = 6;
+      console.log(n);
+    concepts: [const, assignment]
+    options:
+      - {text: "const n = 5;", correct: false, explanation: "A declaration with an initializer is fine. The error is the later write."}
+      - {text: "n = 6;", correct: true, explanation: "const bindings cannot be reassigned, so TypeScript reports an error on this line."}
+      - {text: "console.log(n);", correct: false, explanation: "Reading a const is always allowed."}
+      - {text: "None of the lines", correct: false, explanation: "The second line fails, so this cannot be right."}
+  - id: q06-2
+    type: short
+    text: "What string does `typeof null` evaluate to?"
+    concepts: [typeof, "null"]
+    answers: ["object", "\"object\"", "'object'"]
+    sources: [3]
+  - id: q06-3
+    type: open
+    text: "Explain structural typing in your own words."
+    concepts: [structural-typing]
+    rubric: |
+      - Says compatibility between types is decided by their shape (members), not their declared names.
+      - Contrasts this with nominal typing, where names or declarations decide.
+      - Gives or recognizes an example where two differently named types with the same shape are assignable.
+    sources: [8]
+  - id: q06-4
+    type: open
+    text: "When would you write a user-defined type guard instead of using typeof?"
+    concepts: [type-guard, user-defined-guard]
+    rubric: |
+      - Names the case where typeof cannot distinguish the union members, such as two object types.
+      - Uses or describes the `p is T` return form (a type predicate).
+      - Notes that the compiler does not verify the guard body, so a wrong guard silently breaks type safety.
+    sources: [3]

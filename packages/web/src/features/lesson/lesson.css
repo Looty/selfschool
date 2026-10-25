@@ -1,0 +1,131 @@
+/* Lesson screen styles that Tailwind utilities cannot express: markdown prose, shiki, selection. */
+
+.lesson-prose {
+  font-size: 17px;
+  line-height: 1.75;
+}
+/* One flex column with a gap: block margins would collapse or be overridden by the element rules below. */
+.lesson-prose { display: flex; flex-direction: column; gap: 20px; }
+.lesson-prose > * { min-width: 0; }
+.lesson-prose p { margin: 0; }
+.lesson-prose h2,
+.lesson-prose h3 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  margin: 0;
+  scroll-margin-top: 24px;
+}
+/* Same rhythm as the approved prototype: 32px above a heading, 14px below. */
+.lesson-prose h2 { font-size: 24px; margin-top: 12px; margin-bottom: -6px; }
+.lesson-prose h3 { font-size: 19px; margin-top: 8px; margin-bottom: -6px; }
+/* Tailwind's reset strips list markers; without them the padding reads as a stray indent. */
+.lesson-prose ul,
+.lesson-prose ol { margin: 0; padding-left: 24px; }
+.lesson-prose ul { list-style: disc; }
+.lesson-prose ol { list-style: decimal; }
+.lesson-prose li::marker { color: var(--text3); }
+.lesson-prose li + li { margin-top: 6px; }
+.lesson-prose a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border2); }
+.lesson-prose a:hover { text-decoration-color: currentColor; }
+.lesson-prose blockquote { margin: 0; padding-left: 16px; border-left: 3px solid var(--border2); color: var(--text2); }
+.lesson-prose table { border-collapse: collapse; font-family: var(--font-sans); font-size: 15px; }
+.lesson-prose th,
+.lesson-prose td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+.lesson-prose th { background: var(--surface); font-weight: 600; }
+/* The ask row draws the focus ring (focus-within); beat the global :focus-visible rule. */
+.ask-input:focus-visible { outline: none; }
+.lesson-prose :not(pre) > code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface2);
+}
+
+.lesson-callout p { margin: 0; }
+.lesson-callout p + p { margin-top: 8px; }
+.lesson-callout ul { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.lesson-callout li + li { margin-top: 0; }
+/* "In brief" panel: ink on light; in dark an inverted pale block glares, so it is a raised panel instead. */
+.lesson-ink { background: var(--text); color: var(--bg); }
+:root[data-mode="dark"] .lesson-ink { background: var(--surface2); color: var(--text); border: 1px solid var(--border2); }
+/* "In brief": numbered points separated by hairlines, like a ruled summary table. */
+.lesson-takeaways ul { padding-left: 0; list-style: none; gap: 0; counter-reset: takeaway; }
+.lesson-takeaways li { position: relative; padding: 9px 0 9px 32px; border-top: 1px solid color-mix(in srgb, currentColor 22%, transparent); counter-increment: takeaway; }
+.lesson-takeaways li::before {
+  content: counter(takeaway);
+  position: absolute; left: 0; top: 9px;
+  font-family: var(--font-sans); font-size: 15px; font-weight: 600; line-height: 1.6; color: inherit; opacity: 0.6;
+}
+.lesson-takeaways a, .lesson-takeaways sup.cite a { color: inherit; text-decoration-color: currentColor; }
+.lesson-prose .lesson-callout :not(pre) > code { font-family: var(--font-mono); font-size: 0.88em; padding: 0; background: none; }
+.lesson-chat p { margin: 0; }
+.lesson-chat p + p { margin-top: 8px; }
+.lesson-chat code { font-family: var(--font-mono); font-size: 0.9em; }
+
+/* Citation [n]: superscript accent link to the Sources list. */
+.lesson-prose sup.cite,
+.lesson-callout sup.cite { font-family: var(--font-sans); font-size: 11px; line-height: 0; margin-left: 1px; }
+sup.cite a { color: var(--accent); text-decoration: none; }
+sup.cite a:hover { text-decoration: underline; }
+
+/* Code blocks: see src/components/code/code.css. */
+
+/* Selection menu target: the highlighted selection uses the tutor tint. */
+.lesson-article ::selection { background: var(--accent-soft); color: var(--text); }
+:root[data-mode="dark"] .lesson-article ::selection { background: color-mix(in srgb, var(--accent) 35%, transparent); }
+
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+}
+.lesson-source:target { background: var(--hue-bg); border-radius: 6px; }
+
+/* Glossary terms: dotted underline; the meaning shows in a readable tooltip on hover or keyboard focus (.lesson-article covers the intro line too). */
+.lesson-article abbr.gloss {
+  position: relative;
+  text-decoration: underline dotted;
+  text-decoration-color: var(--text3);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  cursor: help;
+  outline: none;
+}
+.lesson-article abbr.gloss:hover,
+.lesson-article abbr.gloss:focus-visible { text-decoration-color: var(--text); }
+.lesson-article abbr.gloss:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; border-radius: 2px; }
+.lesson-article abbr.gloss::after {
+  content: attr(data-def);
+  position: absolute;
+  left: 0;
+  top: calc(100% + 8px);
+  z-index: 40;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 48px));
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-sans);
+  font-size: calc(15px * var(--prose-scale, 1));
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+  white-space: normal;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 120ms ease-out;
+}
+.lesson-article abbr.gloss:hover::after,
+.lesson-article abbr.gloss:focus-visible::after { opacity: 1; visibility: visible; }
+.lesson-unused-terms { background: var(--surface); }
+
+/* Settings > Text size: --prose-scale is (chosen size / 17px). The lesson text, headings, intro and callouts scale together. */
+.lesson-prose { font-size: calc(17px * var(--prose-scale, 1)); }
+.lesson-prose h2 { font-size: calc(24px * var(--prose-scale, 1)); }
+.lesson-prose h3 { font-size: calc(19px * var(--prose-scale, 1)); }
+.lesson-prose table { font-size: calc(15px * var(--prose-scale, 1)); }

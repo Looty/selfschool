@@ -1,0 +1,15 @@
+{
+  "name": "selfschool",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "school": "node packages/cli/dist/index.js"
+  }
+}

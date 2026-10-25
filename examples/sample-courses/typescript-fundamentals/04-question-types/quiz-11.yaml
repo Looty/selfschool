@@ -1,0 +1,22 @@
+schemaVersion: 1
+id: q17
+title: "Question type: trace the code"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q17-1
+    type: trace
+    text: "What does each variable hold after each line runs?"
+    concepts: [operators, evaluation-order]
+    code: |
+      let a = 1;
+      let b = a++;
+      a += b * 2;
+    variables: [a, b]
+    steps:
+      - {label: "line 1", values: {a: 1, b: "not declared"}, given: [b]}
+      - {label: "line 2", values: {a: 2, b: 1}}
+      - {label: "line 3", values: {a: 4, b: 1}}
+    explanation: "`a++` yields the old value and then adds one, so b gets 1 and a becomes 2. Line 3 then adds b * 2, which is 2, so a ends at 4."

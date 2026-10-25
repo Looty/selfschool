@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": ["node"],
+    "paths": {
+      "@selfschool/shared": ["../shared/src/index.ts"],
+      "@selfschool/shared/node": ["../shared/src/node.ts"]
+    }
+  },
+  "include": ["src", "test", "vitest.config.ts"]
+}

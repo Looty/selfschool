@@ -1,0 +1,32 @@
+schemaVersion: 1
+id: q01                          # unique across the package, stable
+title: "Check: lesson topic"
+max_attempts: 0                  # 0 = unlimited
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q01-1                    # unique across the package, stable (never renumber)
+    type: mcq                    # mcq | short | open (more types in question-types.yaml)
+    text: "Which of these is a primary colour in additive (light) mixing?"
+    # code: |                    # optional: a text block to show with the question (snippet, table, quotation)
+    concepts: [colour-mixing, additive-colour]   # quote YAML words that parse as non-strings: "null", "yes", "no", "on", "off"
+    sources: [1]                 # optional on mcq/short, required on open
+    options:                     # 2 to 4 options, at least one correct, EVERY option has an explanation
+      - {text: "Red", correct: true, explanation: "Red, green and blue are the additive primaries; screens mix light from them."}
+      - {text: "Yellow", correct: false, explanation: "Yellow is a primary in subtractive (paint) mixing, not in light."}
+      - {text: "Black", correct: false, explanation: "Black is the absence of light, not a colour of light."}
+  - id: q01-2
+    type: short                  # fuzzy-matched locally; list every acceptable phrasing
+    text: "What do you call mixing paint pigments, where each added colour absorbs more light?"
+    answers: ["subtractive", "subtractive mixing", "subtractive colour mixing"]
+    concepts: [subtractive-colour]
+  - id: q01-3
+    type: open                   # graded by the runner against the rubric
+    text: "Explain why a screen can show yellow without a yellow light source."
+    concepts: [additive-colour]
+    rubric: |                    # required; one criterion per line, each worth one point
+      - Says that red and green light are shown together.
+      - Says that the eye combines them into the perception of yellow.
+      - Contrasts with paint, where yellow is a pigment that absorbs blue.
+    sources: [1]

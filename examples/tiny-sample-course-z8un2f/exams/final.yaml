@@ -1,0 +1,17 @@
+schemaVersion: 1
+id: final
+title: Final check
+duration_minutes: 5
+max_attempts: 0
+passing_percentage: 70
+shuffle: true
+limit_questions: 4
+domains:
+  - id: basics
+    title: Basics
+    weight: 50
+    chapters: [01-basics]
+  - id: details
+    title: Details
+    weight: 50
+    chapters: [02-details]

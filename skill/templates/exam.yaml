@@ -1,0 +1,19 @@
+schemaVersion: 1
+id: mid                          # matches the id in course.yaml `exams`
+title: Mid-course exam
+duration_minutes: 30
+max_attempts: 3                  # 0 = unlimited
+passing_percentage: 70
+shuffle: true
+limit_questions: 12              # questions drawn per instance
+domains:                         # weights must sum to 100; question draw is proportional
+  - id: domain-a
+    title: Domain A name
+    weight: 60
+    chapters: [01-first-chapter] # bank questions from these chapters' quizzes
+    concepts: [concept-1, concept-2]   # optional extra filter / generation targets
+  - id: domain-b
+    title: Domain B name
+    weight: 40
+    chapters: [02-second-chapter]
+    concepts: [concept-3]
