@@ -117,6 +117,14 @@ describe("school translate", () => {
     expect(calls.some((c) => c.kind === "quiz" && c.stdin.includes("differs in structure"))).toBe(true);
   });
 
+  it("translates only the chapters asked for", async () => {
+    const { adapter, calls } = fakeModel();
+    const report = await run(adapter, { chapters: ["01-basics"] });
+    expect(report.failed).toEqual([]);
+    expect(report.translated.filter((f) => f !== "course.yaml").every((f) => f.startsWith("01-basics/"))).toBe(true);
+    expect(calls.filter((c) => c.kind === "lesson").length).toBe(3);
+  });
+
   it("resumes: a second run asks the model for nothing, --force translates everything again", async () => {
     const first = fakeModel();
     await run(first.adapter);

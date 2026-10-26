@@ -479,13 +479,14 @@ export const handlers: Handlers = {
   packages: (_, db) => ({
     packages: [
       ...db.packages,
-      { id: "pkg-aws", course: OTHER_COURSES[0].course, url: "github.com/friend/aws-saa", path: "", ref: "main", sha: "91be0d4", status: "update_available" as const, latestSha: "c07d2aa" },
+      { id: "pkg-aws", course: OTHER_COURSES[0].course, language: "en", translations: [], url: "github.com/friend/aws-saa", path: "", ref: "main", sha: "91be0d4", status: "update_available" as const, latestSha: "c07d2aa" },
     ],
   }),
 
   addPackage: ({ body }, db) => {
     const pkg = {
       id: `pkg-${++db.seq}`, course: { id: "new-course", title: "New course", monogram: "NC", hue: "pink" as const },
+      language: "en", translations: [] as string[],
       url: body.url, path: body.path ?? "", ref: body.ref ?? "main", sha: "0000000", status: "up_to_date" as const, latestSha: null,
     };
     db.packages.push(pkg as (typeof db.packages)[number]);

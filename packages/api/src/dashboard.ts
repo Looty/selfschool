@@ -3,7 +3,8 @@ import type { Dashboard } from "@selfschool/shared";
 import { loadCourses, type Ctx } from "./ctx.js";
 import { attemptAnswers, attempts, completions, jobs, questions } from "./db/schema.js";
 import type { LightLesson } from "./catalog.js";
-import { courseSummary, currentLesson, lessonRef, progressOf } from "./courses.js";
+import { courseSummary, currentLesson, lessonRef, localizeRef, localizeSummary, progressOf } from "./courses.js";
+import { titlesFor } from "./i18n.js";
 import { cached } from "./summaryCache.js";
 import { localDate } from "./util.js";
 
@@ -104,7 +105,7 @@ function buildActivity(ctx: Ctx): Activity {
 
 const level = (n: number) => (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 7 ? 3 : 4);
 
-export function dashboard(ctx: Ctx): Dashboard {
+export function dashboard(ctx: Ctx, lang?: string): Dashboard {
   const courses = loadCourses(ctx);
   const act = activity(ctx);
   const now = ctx.now();
@@ -130,15 +131,16 @@ export function dashboard(ctx: Ctx): Dashboard {
   if (pick) {
     const cur = currentLesson(ctx, pick)!;
     const next = pick.light.lessons[cur.index + 1];
+    const titles = titlesFor(ctx, pick, lang);
     cont = {
-      course: pick.ref,
-      lesson: lessonRef(cur),
+      course: titles?.title ? { ...pick.ref, title: titles.title } : pick.ref,
+      lesson: localizeRef(lessonRef(cur), titles, "lessons"),
       lessonNumber: cur.index + 1,
       lessonTotal: pick.light.lessons.length,
-      chapterTitle: cur.chapterTitle,
+      chapterTitle: titles?.chapters[cur.chapterDir] ?? cur.chapterTitle,
       minutes: cur.minutes,
       progress: progressOf(ctx, pick),
-      upNext: next ? lessonRef(next) : null,
+      upNext: next ? localizeRef(lessonRef(next), titles, "lessons") : null,
     };
   }
 
@@ -167,6 +169,6 @@ export function dashboard(ctx: Ctx): Dashboard {
     }),
     weakSpots,
     pendingGrading,
-    courses: courses.map((c) => courseSummary(ctx, c)),
+    courses: courses.map((c) => localizeSummary(ctx, courseSummary(ctx, c), c, lang)),
   };
 }

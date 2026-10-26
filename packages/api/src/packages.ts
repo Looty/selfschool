@@ -11,6 +11,7 @@ import { loadCourses, type Ctx, type GitRunner } from "./ctx.js";
 import { checkGithubUpdates, parseGithubUrl } from "./githubGit.js";
 import { removedIds, unremoveCourse } from "./removal.js";
 import { packages } from "./db/schema.js";
+import { languagesOf } from "./i18n.js";
 import { HttpError, newId } from "./util.js";
 
 const execFileP = promisify(execFile);
@@ -45,7 +46,7 @@ export function listPackages(ctx: Ctx): PackageInfo[] {
     const row = ctx.db.select().from(packages).where(eq(packages.id, c.id)).get();
     if (!row) return [];
     return [{
-      id: c.id, course: c.ref, url: row.url, path: row.path, ref: row.ref, sha: row.sha,
+      id: c.id, course: c.ref, language: c.manifest.language, translations: languagesOf(ctx, c), url: row.url, path: row.path, ref: row.ref, sha: row.sha,
       status: "up_to_date" as const, latestSha: null,
     }];
   });

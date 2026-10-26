@@ -652,6 +652,9 @@ export const updateSettingsSchema = z.object({ models: modelsSchema.partial() })
 export const packageInfoSchema = z.object({
   id,
   course: courseRefSchema,
+  /** The course's own language, and the translations it has (package or extensions folder). */
+  language: z.string().default("en"),
+  translations: z.array(z.string()).default([]),
   url: z.string(),
   path: z.string(),
   ref: z.string(),

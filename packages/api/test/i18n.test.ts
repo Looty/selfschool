@@ -66,6 +66,17 @@ describe("course translations", () => {
     expect((await get(h, "/courses/typescript-fundamentals")).json.chapters[0].title).toBe("Types you actually use");
   });
 
+  it("translates the dashboard and lists the languages in the packages list", async () => {
+    const h = setup({ coursesDir: sampleDir() });
+    const dash = (await get(h, "/dashboard", he)).json;
+    expect(dash.courses[0].title).toBe("יסודות TypeScript");
+    expect(dash.courses[0].translations).toEqual(["he"]);
+    expect(dash.continue.course.title).toBe("יסודות TypeScript");
+    expect((await get(h, "/dashboard")).json.courses[0].title).toBe("TypeScript Fundamentals");
+    const pkg = (await get(h, "/packages")).json.packages[0];
+    expect(pkg).toMatchObject({ language: "en", translations: ["he"] });
+  });
+
   it("asking for a language the course does not have, or a malformed one, gives the source language", async () => {
     const h = setup({ coursesDir: sampleDir() });
     for (const lang of ["fr", "../x", "HE!", ""]) {

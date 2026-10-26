@@ -4,7 +4,8 @@ import type { PackageInfo, Settings } from "@selfschool/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPackageUpdates, getRemoved, restoreCourse } from "../../api/client";
 import { usePackages, useSettings, useUpdateSettings } from "../../api/hooks";
-import { COMMON_LANGUAGES, languageName, loadContentLanguage, saveContentLanguage } from "../../api/language";
+import { COMMON_LANGUAGES, languageName, loadContentLanguage, readingLanguage, saveContentLanguage } from "../../api/language";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { LOCAL, describeLastBackup, loadLastBackup, markBackupDone } from "./backup";
 import { ImportDialog, type ImportSource } from "./ImportDialog";
 import { Modal } from "./Modal";
@@ -372,6 +373,18 @@ function PackageRow({ pkg, onRemove, onReview }: { pkg: PackageInfo; onRemove: (
         <div className="mt-0.5 break-all font-mono text-xs text-text3">
           {pkg.url.replace(/^https?:\/\//, "")}
           {pkg.path ? `/${pkg.path}` : ""} @ {pkg.ref} · {shortSha(pkg.sha)}
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text3">
+          {pkg.translations.length > 0 ? (
+            <>
+              <span>Language</span>
+              <LanguageSwitch languages={[pkg.language, ...pkg.translations]} current={readingLanguage(pkg)} />
+            </>
+          ) : (
+            <span>
+              {languageName(pkg.language)} only{LOCAL ? "" : <> · translate it: <code className="font-mono">pnpm school translate {pkg.id} --lang he</code></>}
+            </span>
+          )}
         </div>
       </div>
       {updates?.status === "update_available" ? (

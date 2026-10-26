@@ -123,11 +123,11 @@ export function translationOutDir(courseDir: string, courseId: string, lang: str
  * (`--force` starts over); `--dry-run` only sizes the job.
  */
 export async function translate(argv: string[]): Promise<number> {
-  const valueFlags = new Set(["--lang", "--model", "--extensions", "--concurrency"]);
+  const valueFlags = new Set(["--lang", "--model", "--extensions", "--concurrency", "--chapter"]);
   const course = argv.find((a, i) => !a.startsWith("-") && !(i > 0 && valueFlags.has(argv[i - 1]!)));
   const lang = flagValue(argv, "--lang");
   if (!course || !lang) {
-    console.log("usage: school translate <course folder or id> --lang <code> [--into-package] [--extensions <dir>] [--model <name>] [--concurrency <n>] [--force] [--dry-run]");
+    console.log("usage: school translate <course folder or id> --lang <code> [--chapter <folder[,folder]>] [--into-package] [--extensions <dir>] [--model <name>] [--concurrency <n>] [--force] [--dry-run]");
     return 1;
   }
   if (!LANGUAGE_CODE.test(lang)) {
@@ -150,7 +150,13 @@ export async function translate(argv: string[]): Promise<number> {
   }
   const outDir = translationOutDir(courseDir, check.manifest.id, lang, { intoPackage: argv.includes("--into-package"), extensions: flagValue(argv, "--extensions") });
 
-  const units = unitsOf(courseDir);
+  const chapters = flagValue(argv, "--chapter")?.split(",").map((c) => c.trim()).filter(Boolean);
+  const unknown = chapters?.filter((c) => !check.manifest!.chapters.some((x) => x.dir === c));
+  if (unknown?.length) {
+    console.error(`no chapter folder ${unknown.join(", ")} in this course; folders are: ${check.manifest.chapters.map((c) => c.dir).join(", ")}`);
+    return 1;
+  }
+  const units = unitsOf(courseDir).filter((u) => !chapters?.length || chapters.includes(u.file.split("/")[0]!));
   const est = estimate(units);
   console.log(`${check.manifest.title}: ${est.files} files (${units.filter((u) => u.kind === "lesson").length} lessons, ${units.filter((u) => u.kind === "quiz").length} quizzes) into ${languageName(lang)}`);
   console.log(`rough size: ${(est.inputTokens / 1000).toFixed(0)}K tokens in, ${(est.outputTokens / 1000).toFixed(0)}K out, about $${est.usd.toFixed(2)} at Claude Sonnet 5.5 API prices (plus ~30% for retries and review)`);
@@ -166,6 +172,7 @@ export async function translate(argv: string[]): Promise<number> {
     model: flagValue(argv, "--model") ?? cfg.modelStrong,
     force: argv.includes("--force"),
     concurrency: Number(flagValue(argv, "--concurrency")) || 3,
+    ...(chapters?.length ? { chapters } : {}),
     log: (m) => console.log(m),
   });
   console.log(`done: ${report.translated.length} written, ${report.kept.length} already translated, ${report.failed.length} failed${report.costUsd ? `, reported cost $${report.costUsd.toFixed(2)}` : ""}`);

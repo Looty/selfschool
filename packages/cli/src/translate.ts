@@ -23,6 +23,8 @@ export interface TranslateOptions {
   /** Translate again even when a valid translated file exists. */
   force?: boolean;
   concurrency?: number;
+  /** Only these chapter folders (a way to try a language on a course before translating all of it). */
+  chapters?: string[];
   /** Extra attempts after a reply that breaks a rule. Default 2. */
   retries?: number;
   log?: (message: string) => void;
@@ -151,7 +153,7 @@ export async function translateCourse(opts: TranslateOptions): Promise<Translate
   const log = opts.log ?? (() => {});
   const retries = opts.retries ?? 2;
   const timeoutMs = opts.timeoutMs ?? 600_000;
-  const units = unitsOf(courseDir);
+  const units = unitsOf(courseDir).filter((u) => !opts.chapters?.length || opts.chapters.includes(u.file.split("/")[0]!));
   const manifest = validateCoursePackage(courseDir).manifest!;
   const report: TranslateReport = { translated: [], kept: [], failed: [], costUsd: 0 };
 

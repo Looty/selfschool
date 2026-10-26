@@ -51,7 +51,7 @@ export interface MockDb {
   extensions: Map<string, { id: string; seed: ExtensionSeed; budgetMinutes: number; jobId: string; createdAt: number; readyAt: number; decision: "approved" | "rejected" | null; outline: OutlineResult | null; decidedAt: number | null; generation?: { startedAt: number; total: number } }>;
   reported: Set<string>;
   models: Settings["models"];
-  packages: { id: string; course: typeof TS; url: string; path: string; ref: string; sha: string; status: "up_to_date" | "update_available"; latestSha: string | null }[];
+  packages: { id: string; course: typeof TS; language: string; translations: string[]; url: string; path: string; ref: string; sha: string; status: "up_to_date" | "update_available"; latestSha: string | null }[];
   seq: number;
   /** `?ai=paused` in the URL simulates a stopped runner. */
   aiAvailable: () => boolean;
@@ -118,7 +118,7 @@ export function createDb(): MockDb {
     reported: new Set(),
     models: { grade: "haiku", chat: "haiku", generate: "sonnet", verify: "sonnet" },
     packages: [
-      { id: "pkg-ts", course: TS, url: "github.com/example/selfschool-courses", path: "typescript-fundamentals", ref: "main", sha: "a3f9c21", status: "up_to_date", latestSha: null },
+      { id: "pkg-ts", course: TS, language: "en", translations: [], url: "github.com/example/selfschool-courses", path: "typescript-fundamentals", ref: "main", sha: "a3f9c21", status: "up_to_date", latestSha: null },
     ],
     seq: 100,
     aiAvailable: () => !paused,

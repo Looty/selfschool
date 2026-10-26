@@ -243,7 +243,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
 
   // ---------- courses, lessons, dashboard ----------
 
-  route("dashboard", () => dashboard(ctx));
+  route("dashboard", ({ lang }) => dashboard(ctx, lang));
   route("courses", ({ lang }) => ({ courses: listCourses(ctx, lang) }));
   route("course", ({ params, lang }) => courseDetail(ctx, params.courseId, lang));
   route("proposeExtension", ({ params, body }) => proposeExtension(ctx, params.courseId, body));
