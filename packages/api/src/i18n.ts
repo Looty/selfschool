@@ -47,6 +47,11 @@ export function languagesOf(ctx: Ctx, course: Pick<LoadedCourse, "id" | "dir">):
   return [...found].sort();
 }
 
+/** Languages that have at least one translated file in a chapter (so a partly translated course says where it is). */
+export function chapterLanguages(ctx: Ctx, course: Pick<LoadedCourse, "id" | "dir">, chapterDir: string): string[] {
+  return languagesOf(ctx, course).filter((lang) => roots(ctx, course, lang).some((r) => existsSync(join(r, chapterDir))));
+}
+
 /** Just the titles files: what lists and outlines need. Never opens a lesson. */
 export function titlesFor(ctx: Ctx, course: LoadedCourse, lang: string | undefined): TranslationManifest | null {
   if (!lang || lang === course.manifest.language || !LANGUAGE_CODE.test(lang)) return null;

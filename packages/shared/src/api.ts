@@ -105,6 +105,8 @@ export const chapterOutlineSchema = z.object({
   done: z.number().int(),
   total: z.number().int(),
   lessons: z.array(lessonRowSchema),
+  /** Languages with at least one translated file in this chapter (the course's own language is not listed). */
+  translations: z.array(z.string()).default([]),
 });
 export type ChapterOutline = z.infer<typeof chapterOutlineSchema>;
 
@@ -308,6 +310,8 @@ export const learnerQuizSchema = z.object({
   progress: progressSchema,
   /** Language of the text in this response; sets reading direction. */
   language: z.string().optional(),
+  /** Every language the course can be read in: its own first, then its translations. */
+  languages: z.array(z.string()).default([]),
 });
 export type LearnerQuiz = z.infer<typeof learnerQuizSchema>;
 

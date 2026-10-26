@@ -50,7 +50,7 @@ function outline(db: MockDb): ChapterOutline[] {
     }));
     return {
       dir: c.dir, title: c.title, level: 1, origin: "researched" as const, minutes: lessons.reduce((n, l) => n + l.minutes + PRACTICE_PER_LESSON, 0),
-      done: lessons.filter((l) => l.status === "done").length, total: lessons.length, lessons,
+      done: lessons.filter((l) => l.status === "done").length, total: lessons.length, lessons, translations: [],
     };
   });
 }
@@ -387,6 +387,7 @@ export const handlers: Handlers = {
       attemptNumber: n + 1,
       questions: QUIZ_QUESTION_IDS.map((q) => learnerQuestion(BANK[q]!)),
       progress: progressOf(db),
+      languages: ["en"],
     };
   },
 

@@ -2,6 +2,7 @@ import { useEffect, useReducer, useState } from "react";
 import type { AttemptResult, LearnerQuiz } from "@selfschool/shared";
 import { Link, useParams } from "react-router-dom";
 import { useApiQuery, useAttempt, useFinishAttempt, useLesson, useQuiz, useStartQuizAttempt, useSubmitAnswer } from "../../api/hooks";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseBand } from "../../ui";
 import { ErrorPage, LoadingPage, Narrow, Notice, Page, errorMessage } from "./PageState";
 import { QuestionPanel } from "./QuestionPanel";
@@ -89,7 +90,12 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
           maxWidth={720}
           progress={100}
           subline={<Link to={lessonHref} className="text-text2 no-underline">Lesson · {quiz.lesson.title}</Link>}
-          right={<span className="text-[13px] text-text2">RESULTS · QUIZ</span>}
+          right={
+            <span className="flex items-center gap-3 text-[13px] text-text2">
+              <LanguageSwitch languages={quiz.languages} current={quiz.language ?? quiz.languages[0] ?? ""} />
+              RESULTS · QUIZ
+            </span>
+          }
         />
         <Narrow width={720} language={view.language}>
           <QuizResults attempt={view} lessonHref={lessonHref} nextHref={nextHref} nextTitle={nextTitle} maxAttempts={quiz.quiz.maxAttempts} onRetake={onRetake} />
@@ -110,8 +116,11 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
         progress={((s.index + 1) / total) * 100}
         subline={<Link to={lessonHref} className="text-text2 no-underline">Lesson · {quiz.lesson.title}</Link>}
         right={
-          <span className="text-[13px] text-text2">
-            <span className="text-[22px] font-semibold tracking-[-0.02em] text-text">{s.index + 1}</span> / {total} · QUIZ
+          <span className="flex items-center gap-3 text-[13px] text-text2">
+            <LanguageSwitch languages={quiz.languages} current={quiz.language ?? quiz.languages[0] ?? ""} />
+            <span>
+              <span className="text-[22px] font-semibold tracking-[-0.02em] text-text">{s.index + 1}</span> / {total} · QUIZ
+            </span>
           </span>
         }
       />

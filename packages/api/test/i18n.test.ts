@@ -73,6 +73,14 @@ describe("course translations", () => {
     expect(dash.courses[0].translations).toEqual(["he"]);
     expect(dash.continue.course.title).toBe("יסודות TypeScript");
     expect((await get(h, "/dashboard")).json.courses[0].title).toBe("TypeScript Fundamentals");
+    // each chapter says which languages have files in it: the sample translates only chapter 02
+    const detail = (await get(h, "/courses/typescript-fundamentals")).json;
+    expect(detail.chapters.map((c: J) => [c.dir, c.translations])).toEqual([
+      ["01-basics", []],
+      ["02-narrowing", ["he"]],
+      ["03-generics", []],
+      ["04-question-types", []],
+    ]);
     const pkg = (await get(h, "/packages")).json.packages[0];
     expect(pkg).toMatchObject({ language: "en", translations: ["he"] });
   });

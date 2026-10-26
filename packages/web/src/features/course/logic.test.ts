@@ -46,7 +46,7 @@ describe("outline status", () => {
 
 describe("levels", () => {
   const ch = (dir: string, level: number, done: number, total: number, minutes: number): ChapterOutline => ({
-    dir, title: dir, level, origin: level > 1 ? "quick" : "researched", minutes, done, total, lessons: [],
+    dir, title: dir, level, origin: level > 1 ? "quick" : "researched", minutes, done, total, lessons: [], translations: [],
   });
   it("keeps level 1 as the core and totals each extension level apart", () => {
     const { core, extensions } = splitLevels([ch("a", 1, 3, 3, 30), ch("b", 2, 1, 2, 12), ch("c", 2, 0, 3, 20), ch("d", 3, 0, 1, 5)]);

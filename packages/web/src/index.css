@@ -172,9 +172,9 @@
   --color-hue-pink: var(--hue-pink);
   --color-hue-pink-bg: var(--hue-pink-bg);
   --color-hue-pink-ink: var(--hue-pink-ink);
-  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
-  --font-serif: "IBM Plex Serif", Georgia, serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --font-sans: "IBM Plex Sans", "IBM Plex Sans Hebrew", system-ui, sans-serif;
+  --font-serif: "IBM Plex Serif", "IBM Plex Sans Hebrew", Georgia, serif;
+  --font-mono: "IBM Plex Mono", "IBM Plex Sans Hebrew", ui-monospace, monospace;
 }
 
 /* Per-course hue: set data-hue on a course card / page root, then use text-hue, bg-hue-bg, text-hue-ink. */

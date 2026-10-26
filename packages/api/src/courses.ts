@@ -16,7 +16,7 @@ import { answerCount } from "./chat.js";
 import { getCourse, loadCourses, type Ctx } from "./ctx.js";
 import { attempts, completions, lessonRevisions, packages } from "./db/schema.js";
 import { examRow } from "./exams.js";
-import { languagesOf, quizIn, titlesFor, translationFor } from "./i18n.js";
+import { chapterLanguages, languagesOf, quizIn, titlesFor, translationFor } from "./i18n.js";
 import { cached } from "./summaryCache.js";
 import { HttpError } from "./util.js";
 
@@ -88,6 +88,7 @@ function buildOutline(ctx: Ctx, course: LoadedCourse): ChapterOutline[] {
       done: lessons.filter((l) => l.status === "done").length,
       total: lessons.length,
       lessons,
+      translations: [] as string[],
     };
   });
 }
@@ -118,12 +119,12 @@ export const courseTime = (ctx: Ctx, course: LoadedCourse): CourseTime =>
   });
 
 /** Titles in the reader's language, applied after the cached (source-language) summaries so the cache never mixes languages. */
-export function localizeOutline(chapters: ChapterOutline[], t: TranslationManifest | null): ChapterOutline[] {
-  if (!t) return chapters;
+export function localizeOutline(ctx: Ctx, course: LoadedCourse, chapters: ChapterOutline[], t: TranslationManifest | null): ChapterOutline[] {
   return chapters.map((c) => ({
     ...c,
-    title: t.chapters[c.dir] ?? c.title,
-    lessons: c.lessons.map((l) => ({ ...l, title: t.lessons[l.id] ?? l.title })),
+    // read fresh, like the course's language list: a translation written by `school translate` appears at once
+    translations: chapterLanguages(ctx, course, c.dir),
+    ...(t ? { title: t.chapters[c.dir] ?? c.title, lessons: c.lessons.map((l) => ({ ...l, title: t.lessons[l.id] ?? l.title })) } : {}),
   }));
 }
 
@@ -165,11 +166,10 @@ export function courseDetail(ctx: Ctx, courseId: string, lang?: string): CourseD
   const course = getCourse(ctx, courseId);
   const detail = cachedDetail(ctx, course);
   const t = titlesFor(ctx, course, lang);
-  if (!t) return { ...detail, translations: languagesOf(ctx, course) };
   return {
     ...localizeSummary(ctx, detail, course, lang),
-    description: t.description ?? detail.description,
-    chapters: localizeOutline(detail.chapters, t),
+    description: t?.description ?? detail.description,
+    chapters: localizeOutline(ctx, course, detail.chapters, t),
     resume: detail.resume ? localizeRef(detail.resume, t, "lessons") : null,
   };
 }
@@ -245,7 +245,7 @@ export function lessonView(ctx: Ctx, courseId: string, lessonId: string, lang?: 
     quiz: quiz ? { id: quiz.quiz.id, title: quizTitle, questionCount: quiz.quiz.questions.length } : null,
     completed: completionMap(ctx, course.id).has(l.id),
     progress: progressOf(ctx, course),
-    chapters: localizeOutline(outline(ctx, course), titles),
+    chapters: localizeOutline(ctx, course, outline(ctx, course), titles),
     exam: exam ? examRow(ctx, course, exam) : null,
     ai: { available: ctx.aiAvailable() },
     answerCount: answerCount(ctx, course.id, l.id),
@@ -294,6 +294,7 @@ export function quizView(ctx: Ctx, courseId: string, quizId: string, lang?: stri
       showAnswers: quiz.show_answers,
     },
     language: t?.quizzes.has(quizId) ? t.lang : course.manifest.language,
+    languages: [course.manifest.language, ...languagesOf(ctx, course)],
     attemptNumber: used + 1,
     questions: quiz.questions.map((q): SnapQ => ({ id: questionKey(course.id, q.id), domain: null, chapter: lq.chapterDir, lessonId: lq.lessonId, q })).map(learnerQuestion),
     progress: progressOf(ctx, course),
