@@ -73,7 +73,7 @@ describe("packages", () => {
     const h = setup();
     const { packages } = (await h.get("/packages")).json;
     expect(packages).toEqual([
-      { id: "mini", course: expect.objectContaining({ id: "mini" }), url: "local:mini", path: "", ref: "local", sha: expect.stringMatching(/^[0-9a-f]{12}$/), status: "up_to_date", latestSha: null },
+      { id: "mini", course: expect.objectContaining({ id: "mini" }), language: "en", translations: [], url: "local:mini", path: "", ref: "local", sha: expect.stringMatching(/^[0-9a-f]{12}$/), status: "up_to_date", latestSha: null },
     ]);
   });
 

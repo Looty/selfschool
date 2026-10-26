@@ -2,6 +2,8 @@ import type { CSSProperties, ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { ContinueCard, Dashboard } from "@selfschool/shared";
 import { useDashboard, useSettings } from "../../api/hooks";
+import { loadContentLanguage } from "../../api/language";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { Button, SectionLabel, cx } from "../../ui";
 import { BackupNudge } from "./BackupNudge";
 import { CourseCard } from "./CourseCard";
@@ -9,6 +11,7 @@ import {
   activeDays, barHeights, continueLabel, dateLabel, formatMinutes, heatColor, heatmapWeeks, plural, ringDash, weakSpotTone,
 } from "./logic";
 import { Icon, PageError, PageLoading } from "./shared";
+import { Welcome } from "./Welcome";
 
 export default function DashboardFeature() {
   const q = useDashboard();
@@ -20,6 +23,7 @@ export default function DashboardFeature() {
 }
 
 export function DashboardView({ data, paused, now = new Date() }: { data: Dashboard; paused: boolean; now?: Date }) {
+  if (data.courses.length === 0) return <Welcome />;
   const hue = data.continue?.course.hue ?? data.courses.find((c) => c.started)?.hue ?? "blue";
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-7 px-7 pb-14 pt-7">
@@ -28,6 +32,7 @@ export function DashboardView({ data, paused, now = new Date() }: { data: Dashbo
           <div className="font-mono text-[11px] uppercase tracking-[0.08em] text-text3">{dateLabel(now)}</div>
           <h1 className="m-0 mt-1 text-[30px] font-semibold leading-[1.2] tracking-[-0.02em]">Dashboard</h1>
         </div>
+        <DashboardLanguage courses={data.courses} />
         {data.pendingGrading > 0 ? (
           <Link to="/attempts" className="flex items-center gap-2.5 rounded-button border border-border bg-warn-bg px-3.5 py-2 text-text no-underline">
             <span className="flex text-warn">
@@ -66,6 +71,19 @@ export function DashboardView({ data, paused, now = new Date() }: { data: Dashbo
           </div>
         </div>
       </section>
+    </div>
+  );
+}
+
+/** Reading language for all courses, when any of them has a translation. Courses without the chosen language stay in their own. */
+function DashboardLanguage({ courses }: { courses: Dashboard["courses"] }) {
+  const languages = [...new Set(courses.flatMap((c) => [c.language, ...c.translations]))].sort();
+  if (languages.length < 2) return null;
+  const want = loadContentLanguage();
+  return (
+    <div className="flex items-center gap-2 text-[13px] text-text2">
+      <span>Course language</span>
+      <LanguageSwitch languages={languages} current={languages.includes(want) ? want : ""} anyLabel="Each course's own" />
     </div>
   );
 }

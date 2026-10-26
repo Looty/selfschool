@@ -36,8 +36,9 @@ export const FONT_OPTIONS = [
 ] as const satisfies ReadonlyArray<{ value: ReadingFont; label: string }>;
 
 export const FONT_STACK: Record<ReadingFont, string> = {
-  serif: '"IBM Plex Serif", Georgia, serif',
-  sans: '"IBM Plex Sans", system-ui, sans-serif',
+  // Hebrew has no serif or Plex Sans glyphs here: it always falls to IBM Plex Sans Hebrew, so one family covers every script
+  serif: '"IBM Plex Serif", "IBM Plex Sans Hebrew", Georgia, serif',
+  sans: '"IBM Plex Sans", "IBM Plex Sans Hebrew", system-ui, sans-serif',
 };
 
 /** The theme a choice applies: "system" picks the default light or dark by the device. */

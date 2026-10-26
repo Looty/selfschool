@@ -5,6 +5,9 @@ import "@fontsource/ibm-plex-serif/400.css";
 import "@fontsource/ibm-plex-serif/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-sans-hebrew/400.css";
+import "@fontsource/ibm-plex-sans-hebrew/500.css";
+import "@fontsource/ibm-plex-sans-hebrew/600.css";
 import "./index.css";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

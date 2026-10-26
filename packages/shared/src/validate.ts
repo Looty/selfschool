@@ -11,7 +11,10 @@ import {
   overlayManifestSchema,
   quizSchema,
   type CourseManifest,
+  type LessonFrontmatter,
+  type Quiz,
 } from "./course.js";
+import { LANGUAGE_CODE, quizParityIssues, translationManifestSchema } from "./translation.js";
 
 export interface ValidationIssue {
   /** Path relative to the package root. */
@@ -71,6 +74,8 @@ export function validateCoursePackage(dir: string): ValidationResult {
   const manifest = loadYaml(manifestPath, courseManifestSchema);
   if (!manifest) return { ok: false, issues };
 
+  const sourceLessons = new Map<string, LessonFrontmatter>();
+  const sourceQuizzes = new Map<string, Quiz>();
   const cited = new Set<number>();
   const seen = new Set<string>();
   const unique = (kind: string, id: string, file: string) => {
@@ -111,6 +116,7 @@ export function validateCoursePackage(dir: string): ValidationResult {
         continue;
       }
       unique("lesson", parsed.data.id, rel(path));
+      sourceLessons.set(`${chapter.dir}/${f}`, parsed.data);
       const { quiz, resources } = parsed.data;
       if (quiz && !existsSync(join(chapterDir, quiz))) add(rel(path), `quiz "${quiz}" does not exist`);
       for (const r of resources) {
@@ -126,6 +132,7 @@ export function validateCoursePackage(dir: string): ValidationResult {
       const quiz = loadYaml(join(chapterDir, f), quizSchema);
       if (!quiz) continue;
       unique("quiz", quiz.id, rel(join(chapterDir, f)));
+      sourceQuizzes.set(`${chapter.dir}/${f}`, quiz);
       for (const q of quiz.questions) {
         unique("question", q.id, rel(join(chapterDir, f)));
         if (q.type === "hotspot" && !existsSync(join(dir, q.image))) add(rel(join(chapterDir, f)), `question ${q.id}: image "${q.image}" does not exist`);
@@ -163,7 +170,88 @@ export function validateCoursePackage(dir: string): ValidationResult {
     }
   }
 
+  // A broken translation must never take the course itself offline: its problems are warnings, and the app ignores
+  // a translated file that fails them (api/src/i18n.ts), falling back to the course's own language.
+  const translationWarn = (file: string, message: string) => warn(file, `translation: ${message}`);
+  const warnYaml = <T>(path: string, schema: ZodType<T>): T | undefined => {
+    const before = issues.length;
+    const out = loadYaml(path, schema);
+    for (const i of issues.splice(before)) translationWarn(i.file, i.message);
+    return out;
+  };
+  validateTranslations(dir, manifest, sourceLessons, sourceQuizzes, translationWarn, translationWarn, warnYaml);
+
   return { ok: issues.length === 0, issues, warnings, manifest };
+}
+
+/**
+ * Checks `i18n/<language>/` (see translation.ts). A translated file must match a source file of the same name, keep
+ * the lesson id, and a translated quiz must keep the exact structure so grading works in both languages.
+ */
+function validateTranslations(
+  dir: string,
+  manifest: CourseManifest,
+  lessons: Map<string, LessonFrontmatter>,
+  quizzes: Map<string, Quiz>,
+  add: (file: string, message: string) => void,
+  warn: (file: string, message: string) => void,
+  loadYaml: <T>(path: string, schema: ZodType<T>) => T | undefined,
+): void {
+  const root = join(dir, "i18n");
+  if (!existsSync(root)) return;
+  for (const lang of readdirSync(root).sort()) {
+    const langDir = join(root, lang);
+    if (!statSync(langDir).isDirectory()) continue;
+    const at = (p: string) => `i18n/${lang}/${p}`;
+    if (!LANGUAGE_CODE.test(lang)) {
+      add(`i18n/${lang}`, "folder name must be a language code such as he or pt-BR");
+      continue;
+    }
+    if (lang === manifest.language) add(`i18n/${lang}`, `this is the course's own language (language: ${manifest.language}); translations are for other languages`);
+
+    const titles = existsSync(join(langDir, "course.yaml")) ? loadYaml(join(langDir, "course.yaml"), translationManifestSchema) : undefined;
+    if (titles) {
+      for (const d of Object.keys(titles.chapters)) {
+        if (!manifest.chapters.some((c) => c.dir === d)) add(at("course.yaml"), `chapters: "${d}" is not a chapter of the course`);
+      }
+    }
+
+    for (const chapter of manifest.chapters) {
+      const chapterDir = join(langDir, chapter.dir);
+      if (!existsSync(chapterDir)) continue;
+      for (const f of readdirSync(chapterDir).sort()) {
+        const key = `${chapter.dir}/${f}`;
+        const file = at(key);
+        if (/^lesson-.*\.md$/.test(f)) {
+          const src = lessons.get(key);
+          if (!src) {
+            add(file, "no lesson with this name in the source course");
+            continue;
+          }
+          const fm = splitFrontmatter(readFileSync(join(chapterDir, f), "utf8"));
+          const parsed = fm ? lessonFrontmatterSchema.safeParse(fm.data) : undefined;
+          if (!parsed?.success) {
+            add(file, "missing or invalid frontmatter (copy the source lesson's, translate only title)");
+            continue;
+          }
+          if (parsed.data.id !== src.id) add(file, `lesson id is "${parsed.data.id}", the source has "${src.id}"`);
+          if (parsed.data.quiz !== src.quiz) add(file, "`quiz` must name the same file as the source lesson");
+          const listed = titles?.lessons[src.id];
+          if (listed !== undefined && listed !== parsed.data.title) add(at("course.yaml"), `lessons.${src.id} ("${listed}") differs from the title in ${file} ("${parsed.data.title}")`);
+        } else if (/^quiz-.*\.ya?ml$/.test(f)) {
+          const src = quizzes.get(key);
+          if (!src) {
+            add(file, "no quiz with this name in the source course");
+            continue;
+          }
+          const tr = loadYaml(join(chapterDir, f), quizSchema);
+          if (tr) for (const message of quizParityIssues(src, tr)) add(file, message);
+        } else {
+          warn(file, "ignored: only lesson-*.md and quiz-*.yaml are translated");
+        }
+      }
+    }
+  }
 }
 
 /** `[n]` citation numbers in lesson prose (code fences and inline code ignored), in order of appearance. */

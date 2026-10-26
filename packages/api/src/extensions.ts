@@ -185,7 +185,7 @@ export function applyOutlineResult(ctx: Ctx, job: typeof jobs.$inferSelect, resu
 function briefInputOf(ctx: Ctx, ext: ExtensionView): BriefInput {
   const course = getCourse(ctx, ext.courseId);
   return {
-    course: { id: course.id, title: course.manifest.title, description: course.manifest.description },
+    course: { id: course.id, title: course.manifest.title, description: course.manifest.description, language: course.manifest.language },
     chapters: course.manifest.chapters.map((c) => ({
       dir: c.dir,
       title: c.title,

@@ -5,6 +5,7 @@ import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import {
   addPackageSchema,
+  portableBackupSchema,
   jobKindSchema,
   jobResultSubmissionSchema,
   routeDef,
@@ -54,6 +55,8 @@ import { claimNextJob, enqueueJob, getJob, submitJobResult, type ResultHooks } f
 import { withGithub } from "./githubGit.js";
 import { addPackage, addPackageZip, insideDir, listPackages, packageUpdates, previewPackage, previewPackageZip, runGit, ZIP_LIMITS } from "./packages.js";
 import { clearPartial, setPartial } from "./partials.js";
+import { requestLanguage } from "./i18n.js";
+import { exportPortable, importPortable } from "./portableBackup.js";
 import { listRemoved, removalSummary, removeCourse, removedIds, restoreCourse } from "./removal.js";
 import { getModels, settingsView, updateModels } from "./settings.js";
 import { HttpError } from "./util.js";
@@ -99,7 +102,8 @@ const MIME: Record<string, string> = {
 };
 
 type Parsed<T> = T extends { parse(x: unknown): infer O } ? O : never;
-type Input<N extends RouteName> = { params: Parsed<Routes[N]["params"]>; body: Parsed<Routes[N]["body"]> };
+/** `lang`: the reader's language from the `x-selfschool-lang` header (see i18n.ts); undefined = the course's own. */
+type Input<N extends RouteName> = { params: Parsed<Routes[N]["params"]>; body: Parsed<Routes[N]["body"]>; lang: string | undefined };
 
 export function createApp(db: Db, opts: AppOptions = {}) {
   const maxWaitMs = opts.maxWaitMs ?? 30_000;
@@ -166,7 +170,8 @@ export function createApp(db: Db, opts: AppOptions = {}) {
         if (!parsed.success) return c.json({ error: "invalid body", issues: parsed.error.issues }, 400);
         body = parsed.data;
       }
-      const out = await handler({ params: params.data, body } as Input<N>, c.req.raw.signal);
+      const lang = requestLanguage(c.req.header("x-selfschool-lang"));
+      const out = await handler({ params: params.data, body, lang } as Input<N>, c.req.raw.signal);
       const res = def.res.safeParse(out);
       if (!res.success) {
         console.error(`response for ${name} violates the contract`, res.error.issues);
@@ -238,9 +243,9 @@ export function createApp(db: Db, opts: AppOptions = {}) {
 
   // ---------- courses, lessons, dashboard ----------
 
-  route("dashboard", () => dashboard(ctx));
-  route("courses", () => ({ courses: listCourses(ctx) }));
-  route("course", ({ params }) => courseDetail(ctx, params.courseId));
+  route("dashboard", ({ lang }) => dashboard(ctx, lang));
+  route("courses", ({ lang }) => ({ courses: listCourses(ctx, lang) }));
+  route("course", ({ params, lang }) => courseDetail(ctx, params.courseId, lang));
   route("proposeExtension", ({ params, body }) => proposeExtension(ctx, params.courseId, body));
   route("extensions", ({ params }) => ({ extensions: listExtensions(ctx, params.courseId) }));
   route("extension", ({ params }) => getExtension(ctx, params.extensionId));
@@ -249,7 +254,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
   route("generateExtension", ({ params }) => generateExtension(ctx, params.extensionId));
   route("resumeExtension", ({ params }) => resumeExtension(ctx, params.extensionId));
   route("decideExtension", ({ params, body }) => decideExtension(ctx, params.extensionId, body));
-  route("lesson", ({ params }) => lessonView(ctx, params.courseId, params.lessonId));
+  route("lesson", ({ params, lang }) => lessonView(ctx, params.courseId, params.lessonId, lang));
   route("completeLesson", ({ params }) => completeLesson(ctx, params.courseId, params.lessonId));
 
   route("chat", ({ params }) => {
@@ -263,17 +268,17 @@ export function createApp(db: Db, opts: AppOptions = {}) {
 
   // ---------- quizzes, exams, attempts ----------
 
-  route("quiz", ({ params }) => quizView(ctx, params.courseId, params.quizId));
+  route("quiz", ({ params, lang }) => quizView(ctx, params.courseId, params.quizId, lang));
   route("startQuizAttempt", ({ params }) => ({ attemptId: startQuizAttempt(ctx, params.courseId, params.quizId) }));
   route("exam", ({ params }) => examInfo(ctx, params.courseId, params.examId));
   route("startExam", ({ params }) => startExam(ctx, params.courseId, params.examId));
   route("regenerateExam", ({ params }) => regenerateExam(ctx, params.courseId, params.examId));
   route("examInstance", ({ params }) => instanceView(ctx, params.instanceId));
   route("attempts", () => listAllAttempts(ctx));
-  route("attempt", ({ params }) => buildAttemptResult(ctx, params.attemptId));
+  route("attempt", ({ params, lang }) => buildAttemptResult(ctx, params.attemptId, lang));
   route("deleteAttempt", ({ params }) => deleteAttempt(ctx, params.attemptId));
-  route("submitAnswer", ({ params, body }) => submitAnswer(ctx, params.attemptId, params.questionId, body));
-  route("finishAttempt", ({ params }) => finishAttempt(ctx, params.attemptId));
+  route("submitAnswer", ({ params, body, lang }) => submitAnswer(ctx, params.attemptId, params.questionId, body, lang));
+  route("finishAttempt", ({ params, lang }) => finishAttempt(ctx, params.attemptId, lang));
   route("reportQuestion", ({ params, body }) => {
     reportQuestion(ctx, params.questionId, body.reason);
     return { retired: true as const };
@@ -323,6 +328,15 @@ export function createApp(db: Db, opts: AppOptions = {}) {
       "content-disposition": `attachment; filename="selfschool-backup-${day}.sqlite"`,
       "cache-control": "no-store",
     });
+  });
+
+  // The same data as readable JSON, restorable on another install (see portableBackup.ts).
+  app.get("/backup/portable", (c) => c.json(exportPortable(ctx), 200, { "cache-control": "no-store" }));
+  app.post("/restore", bodyLimit({ maxSize: 200 * 1024 * 1024, onError: (c) => c.json({ error: "the backup is larger than 200 MB" }, 413) }), async (c) => {
+    const data = portableBackupSchema.safeParse(await c.req.json().catch(() => null));
+    if (!data.success) return c.json({ error: "this is not a Selfschool backup file" }, 400);
+    importPortable(ctx, data.data);
+    return c.json({ restored: true, courses: data.data.courses });
   });
 
   app.get("/courses/:courseId/files/*", (c) => {

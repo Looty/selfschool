@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
 import { formatDuration, type CourseSummary } from "@selfschool/shared";
+import { languageName } from "../../api/language";
 import { Badge, Monogram, ProgressBar } from "../../ui";
 import { courseCaption, plural } from "./logic";
 
@@ -29,7 +30,14 @@ export function CourseCard({ course }: { course: CourseSummary }) {
         </div>
         <div>
           <ProgressBar value={course.percent} label={`${course.title} progress`} />
-          <div className="mt-1.5 font-mono text-[11px] text-text2">{courseCaption(course)}</div>
+          <div className="mt-1.5 flex items-center justify-between gap-2 font-mono text-[11px] text-text2">
+            <span>{courseCaption(course)}</span>
+            {course.translations.length > 0 ? (
+              <span title={[course.language, ...course.translations].map(languageName).join(", ")} className="uppercase text-text3">
+                {[course.language, ...course.translations].join(" · ")}
+              </span>
+            ) : null}
+          </div>
         </div>
       </div>
     </Link>

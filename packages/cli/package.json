@@ -15,7 +15,8 @@
   },
   "dependencies": {
     "@selfschool/runner": "workspace:*",
-    "@selfschool/shared": "workspace:*"
+    "@selfschool/shared": "workspace:*",
+    "yaml": "^2.9.1"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

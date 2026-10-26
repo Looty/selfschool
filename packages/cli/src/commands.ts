@@ -1,8 +1,9 @@
 import { existsSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
-import { newCourseId } from "@selfschool/shared";
+import { LANGUAGE_CODE, newCourseId } from "@selfschool/shared";
 import { validateCoursePackage, validateExtensionOverlay } from "@selfschool/shared/node";
 import { createAdapter, loadConfig, runLoop } from "@selfschool/runner";
+import { estimate, languageName, translateCourse, unitsOf } from "./translate.js";
 import { runDoctor, fetchHealth } from "./doctor.js";
 import { apiUrl, clearPid, compose, findRoot, readRunnerPid, writePid } from "./root.js";
 
@@ -81,6 +82,103 @@ export function newId(argv: string[]): number {
   }
   console.log(newCourseId(title));
   return 0;
+}
+
+const flagValue = (argv: string[], name: string): string | undefined => {
+  const i = argv.indexOf(name);
+  return i !== -1 ? argv[i + 1] : undefined;
+};
+
+/** A course folder given as a path, or as an id looked up in the courses folder. */
+export function findCourseDir(arg: string, env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string | null {
+  if (existsSync(join(arg, "course.yaml"))) return resolve(arg);
+  const roots: string[] = [];
+  if (env.SELFSCHOOL_COURSES_DIR) roots.push(resolve(env.SELFSCHOOL_COURSES_DIR));
+  try {
+    roots.push(join(findRoot(cwd, env), "courses"), join(findRoot(cwd, env), "..", "selfschool-courses"));
+  } catch {
+    /* not inside the repo: only the env var and the path itself count */
+  }
+  for (const r of roots) if (existsSync(join(r, arg, "course.yaml"))) return join(r, arg);
+  return null;
+}
+
+/** Where `school translate` writes: the app's extensions folder (`extensions/<id>/i18n/<lang>`), or the package itself. */
+export function translationOutDir(courseDir: string, courseId: string, lang: string, o: { intoPackage: boolean; extensions?: string | undefined }, env: NodeJS.ProcessEnv = process.env, cwd = process.cwd()): string {
+  if (o.intoPackage) return join(courseDir, "i18n", lang);
+  let base = o.extensions ?? env.SELFSCHOOL_EXTENSIONS_DIR;
+  if (!base) {
+    try {
+      base = join(findRoot(cwd, env), "extensions");
+    } catch {
+      base = join(cwd, "extensions");
+    }
+  }
+  return join(resolve(base), courseId, "i18n", lang);
+}
+
+/**
+ * `school translate <course> --lang <code>`: translates a course with the Claude CLI into `extensions/<id>/i18n/<lang>/`
+ * (yours, never touching the package), or `--into-package` for an author's own `i18n/<lang>/`. Resumes where it stopped
+ * (`--force` starts over); `--dry-run` only sizes the job.
+ */
+export async function translate(argv: string[]): Promise<number> {
+  const valueFlags = new Set(["--lang", "--model", "--extensions", "--concurrency", "--chapter"]);
+  const course = argv.find((a, i) => !a.startsWith("-") && !(i > 0 && valueFlags.has(argv[i - 1]!)));
+  const lang = flagValue(argv, "--lang");
+  if (!course || !lang) {
+    console.log("usage: school translate <course folder or id> --lang <code> [--chapter <folder[,folder]>] [--into-package] [--extensions <dir>] [--model <name>] [--concurrency <n>] [--force] [--dry-run]");
+    return 1;
+  }
+  if (!LANGUAGE_CODE.test(lang)) {
+    console.error(`"${lang}" is not a language code (use he, ar, pt-BR, ...)`);
+    return 1;
+  }
+  const courseDir = findCourseDir(course);
+  if (!courseDir) {
+    console.error(`no course "${course}": give its folder, or its id with SELFSCHOOL_COURSES_DIR set`);
+    return 1;
+  }
+  const check = validateCoursePackage(courseDir);
+  if (!check.ok || !check.manifest) {
+    console.error(`the course does not validate (run \`school validate\`): ${check.issues[0]?.file}: ${check.issues[0]?.message}`);
+    return 1;
+  }
+  if (lang === check.manifest.language) {
+    console.error(`the course is already written in ${lang}`);
+    return 1;
+  }
+  const outDir = translationOutDir(courseDir, check.manifest.id, lang, { intoPackage: argv.includes("--into-package"), extensions: flagValue(argv, "--extensions") });
+
+  const chapters = flagValue(argv, "--chapter")?.split(",").map((c) => c.trim()).filter(Boolean);
+  const unknown = chapters?.filter((c) => !check.manifest!.chapters.some((x) => x.dir === c));
+  if (unknown?.length) {
+    console.error(`no chapter folder ${unknown.join(", ")} in this course; folders are: ${check.manifest.chapters.map((c) => c.dir).join(", ")}`);
+    return 1;
+  }
+  const units = unitsOf(courseDir).filter((u) => !chapters?.length || chapters.includes(u.file.split("/")[0]!));
+  const est = estimate(units);
+  console.log(`${check.manifest.title}: ${est.files} files (${units.filter((u) => u.kind === "lesson").length} lessons, ${units.filter((u) => u.kind === "quiz").length} quizzes) into ${languageName(lang)}`);
+  console.log(`rough size: ${(est.inputTokens / 1000).toFixed(0)}K tokens in, ${(est.outputTokens / 1000).toFixed(0)}K out, about $${est.usd.toFixed(2)} at Claude Sonnet 5.5 API prices (plus ~30% for retries and review)`);
+  console.log(`writing to ${outDir}`);
+  if (argv.includes("--dry-run")) return 0;
+
+  const cfg = loadConfig();
+  const report = await translateCourse({
+    courseDir,
+    outDir,
+    lang,
+    adapter: createAdapter(cfg),
+    model: flagValue(argv, "--model") ?? cfg.modelStrong,
+    force: argv.includes("--force"),
+    concurrency: Number(flagValue(argv, "--concurrency")) || 3,
+    ...(chapters?.length ? { chapters } : {}),
+    log: (m) => console.log(m),
+  });
+  console.log(`done: ${report.translated.length} written, ${report.kept.length} already translated, ${report.failed.length} failed${report.costUsd ? `, reported cost $${report.costUsd.toFixed(2)}` : ""}`);
+  for (const f of report.failed) console.log(`  FAILED ${f.file}: ${f.reason}`);
+  if (report.failed.length) console.log("run the same command again to retry only the failed files (they fall back to the original language until then)");
+  return report.failed.length ? 1 : 0;
 }
 
 /**

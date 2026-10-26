@@ -4,7 +4,9 @@ import type { ChapterOutline, CourseDetail, ExamRow } from "@selfschool/shared";
 import { useCourse, useCourses, useExtensions, useProposeExtension, useSettings } from "../../api/hooks";
 import { Badge, Button, Monogram, ProgressBar, SectionLabel, cx } from "../../ui";
 import { formatDuration } from "@selfschool/shared";
+import { languageName, readingLanguage, textDirection } from "../../api/language";
 import { InlineMarkdown } from "../../components/InlineMarkdown";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseCard } from "../dashboard/CourseCard";
 import { plural } from "../dashboard/logic";
 import { AiPausedNotice, Icon, PageError, PageLoading } from "../dashboard/shared";
@@ -78,12 +80,19 @@ export function CourseView({ course, paused }: { course: CourseDetail; paused: b
           <div className="flex flex-wrap items-end justify-between gap-6">
             <div className="flex min-w-0 flex-[1_1_480px] items-start gap-5">
               <Monogram text={course.monogram} size={44} />
-              <div className="min-w-0">
+              <div className="min-w-0" dir={textDirection(readingLanguage(course))}>
                 <h1 className="m-0 text-[32px] font-semibold leading-[1.15] tracking-[-0.025em]">{course.title}</h1>
                 {course.description ? <p className="m-0 mt-2 max-w-[128ch] text-[15px] text-text2"><InlineMarkdown text={course.description} /></p> : null}
               </div>
             </div>
-            <div className="text-right font-mono text-xs uppercase tracking-[0.06em] text-hue-ink">{heroMeta(course)}</div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="text-right font-mono text-xs uppercase tracking-[0.06em] text-hue-ink">{heroMeta(course)}</div>
+              {course.translations.length > 0 ? (
+                <LanguageSwitch languages={[course.language, ...course.translations]} current={readingLanguage(course)} />
+              ) : (
+                <span className="text-xs text-text3">{languageName(course.language)} only</span>
+              )}
+            </div>
           </div>
         </div>
         <ProgressBar rail value={course.progress.percent} label="Course progress" className="absolute inset-x-0 bottom-0 rounded-none" />

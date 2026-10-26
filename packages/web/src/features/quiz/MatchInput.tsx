@@ -194,6 +194,7 @@ export function MatchInput({ question, draft, onChange, disabled, describedBy }:
     return (
       <button
         key={`${kind}${id}`}
+        dir="auto"
         ref={reg(`${kind}${id}`)}
         data-match={`${kind}${id}`}
         type="button"
@@ -207,7 +208,7 @@ export function MatchInput({ question, draft, onChange, disabled, describedBy }:
           kind === "l" ? pickLeft(id) : pickRight(id);
         }}
         className={cx(
-          "m-0 w-full touch-none select-none rounded-lg border px-3 py-2 text-left text-[13px] leading-snug text-text transition-colors",
+          "m-0 w-full touch-none select-none rounded-lg border px-3 py-2 text-start text-[13px] leading-snug text-text transition-colors",
           kind === "l" && "font-mono",
           !disabled && "cursor-pointer",
           !linked && "border-border2 bg-bg",
@@ -223,7 +224,8 @@ export function MatchInput({ question, draft, onChange, disabled, describedBy }:
 
   return (
     <div className="flex flex-col gap-2" role="group" aria-describedby={describedBy}>
-      <div ref={wrap} className="relative grid grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] items-start">
+      {/* the columns and their arrows are laid out left to right whatever the text direction; each item sets its own text direction */}
+      <div ref={wrap} dir="ltr" className="relative grid grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] items-start">
         <div className="flex flex-col gap-2.5">{question.left.map((it) => side("l", it.id, it.text))}</div>
         <div aria-hidden="true" />
         <div className="flex flex-col gap-2.5">{question.right.map((it) => side("r", it.id, it.text))}</div>
@@ -296,7 +298,7 @@ export function MatchReview({ question, result, draft }: { question: MatchQuesti
   return (
     <div className="flex flex-col gap-3">
       <div className="text-xs text-text3">{right} of {rows.length} pairs right. Select an item to see where it belongs.</div>
-      <div ref={wrap} className="relative grid grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] items-start">
+      <div ref={wrap} dir="ltr" className="relative grid grid-cols-[minmax(0,1fr)_64px_minmax(0,1fr)] items-start">
         <div className="flex flex-col gap-2.5">
           {question.left.map((it) => {
             const v = rows.find((m) => m.id === it.id);
@@ -310,11 +312,12 @@ export function MatchReview({ question, result, draft }: { question: MatchQuesti
                 )}
                 <button
                   ref={reg(`l${it.id}`)}
+                  dir="auto"
                   type="button"
                   aria-pressed={it.id === active}
                   onClick={() => setPicked(it.id)}
                   className={cx(
-                    "m-0 flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-left font-mono text-[13px] leading-snug",
+                    "m-0 flex w-full cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-start font-mono text-[13px] leading-snug",
                     v?.correct ? "border-ok bg-ok-bg text-ok" : "border-bad bg-bad-bg text-bad",
                     it.id === active && "ring-2 ring-accent",
                   )}
@@ -332,6 +335,7 @@ export function MatchReview({ question, result, draft }: { question: MatchQuesti
           {shown.map((s) => (
             <span
               key={s.id}
+              dir="auto"
               ref={reg(`r${s.id}`)}
               className={cx("flex items-center gap-2 rounded-lg border px-3 py-2 text-[13px] leading-snug", s.ok ? "border-ok bg-ok-bg text-ok" : "border-bad bg-bad-bg text-bad")}
             >

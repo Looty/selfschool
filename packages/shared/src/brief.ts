@@ -10,7 +10,7 @@ export interface BriefChapter {
 }
 
 export interface BriefInput {
-  course: { id: string; title: string; description: string };
+  course: { id: string; title: string; description: string; /** Language the course is written in (default "en"). */ language?: string | undefined };
   /** Existing chapters in reading order, every level. */
   chapters: BriefChapter[];
   quizIds: string[];
@@ -218,7 +218,7 @@ You are writing new chapters for an existing Selfschool course, as plain files. 
 ## What to build
 
 - Course id: \`${course.id}\`. Write everything into the extensions folder \`${overlay}\`, never into the course package (\`courses/${course.id}/\`), which belongs to its author and is never edited.
-- Title of the new level: **${outline.title}**
+${course.language && course.language !== "en" ? `- Language: write all lesson and quiz text in the course's language (\`${course.language}\`). Code, ids, file names and YAML keys stay in English.\n` : ""}- Title of the new level: **${outline.title}**
 - Depth: about ${depth} of learner time (${lessonCount} ${lessonCount === 1 ? "lesson" : "lessons"}, planned at roughly ${formatDuration(plannedMinutes(lessonCount))}). Treat this as a guide: write each lesson properly rather than hitting the number exactly.
 ${asked ? `- The learner asked about: "${asked}"\n` : ""}
 Why this was proposed (written to the learner, so "you" below means them):

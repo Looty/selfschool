@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import type { ChatMessage } from "@selfschool/shared";
 import { ApiError } from "../../api/client";
 import { useAsk, useChat, useCompleteLesson, useLesson, useProposeExtension } from "../../api/hooks";
+import { textDirection } from "../../api/language";
 import { Button } from "../../ui";
 import { Article } from "./Article";
 import { AskBar } from "./AskBar";
@@ -120,19 +121,21 @@ export default function LessonFeature() {
     <div data-hue={lesson.course.hue} className="flex min-h-[calc(100vh-56px)] flex-col bg-bg">
       <LessonBand lesson={lesson} />
       <ReadingProgress resetKey={`${courseId}/${lessonId}`} />
-      <Article
-        lesson={lesson}
-        fontFamily={family}
-        onAsk={askAbout}
-        onComplete={() => complete.mutate({ params: { courseId, lessonId } })}
-        onNext={() => {
-          const next = lesson.next;
-          if (!next) return;
-          // Moving on from a quiz-less lesson counts as finishing it; a failed save must not trap the reader.
-          complete.mutate({ params: { courseId, lessonId } }, { onSettled: () => navigate(`/courses/${courseId}/lessons/${next.id}`) });
-        }}
-        completing={complete.isPending}
-      />
+      <div dir={textDirection(lesson.language)} lang={lesson.language} className="contents">
+        <Article
+          lesson={lesson}
+          fontFamily={family}
+          onAsk={askAbout}
+          onComplete={() => complete.mutate({ params: { courseId, lessonId } })}
+          onNext={() => {
+            const next = lesson.next;
+            if (!next) return;
+            // Moving on from a quiz-less lesson counts as finishing it; a failed save must not trap the reader.
+            complete.mutate({ params: { courseId, lessonId } }, { onSettled: () => navigate(`/courses/${courseId}/lessons/${next.id}`) });
+          }}
+          completing={complete.isPending}
+        />
+      </div>
       {complete.isError ? (
         <p role="alert" className="mx-auto -mt-8 mb-8 w-full max-w-[calc(940px*var(--content-scale,1))] px-7 text-sm text-bad">
           Couldn't mark the lesson complete. <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-bad underline" onClick={() => complete.mutate({ params: { courseId, lessonId } })}>Try again</button>

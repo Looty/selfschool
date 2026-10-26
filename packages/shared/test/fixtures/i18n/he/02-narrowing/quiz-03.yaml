@@ -1,0 +1,45 @@
+schemaVersion: 1
+id: q06
+title: "בדיקה: שומרי טיפוס"
+max_attempts: 0
+passing_percentage: 70
+show_answers: true
+shuffle: false
+questions:
+  - id: q06-1
+    type: mcq
+    text: "איזו שורה היא שגיאת טיפוס?"
+    code: |
+      const n = 5;
+      n = 6;
+      console.log(n);
+    concepts: [const, assignment]
+    options:
+      - {text: "const n = 5;", correct: false, explanation: "הצהרה עם ערך התחלתי תקינה. השגיאה היא הכתיבה המאוחרת יותר."}
+      - {text: "n = 6;", correct: true, explanation: "אי אפשר לשנות את ההשמה של const, ולכן TypeScript מדווחת על שגיאה בשורה הזאת."}
+      - {text: "console.log(n);", correct: false, explanation: "קריאה של const תמיד מותרת."}
+      - {text: "אף אחת מהשורות", correct: false, explanation: "השורה השנייה נכשלת, ולכן זו לא יכולה להיות התשובה."}
+  - id: q06-2
+    type: short
+    text: "לאיזו מחרוזת מוערך `typeof null`?"
+    concepts: [typeof, "null"]
+    answers: ["object", "\"object\"", "'object'"]
+    sources: [3]
+  - id: q06-3
+    type: open
+    text: "הסבירו טיפוסיות מבנית (structural typing) במילים שלכם."
+    concepts: [structural-typing]
+    rubric: |
+      - אומר שהתאמה בין טיפוסים נקבעת לפי הצורה שלהם (החברים), לא לפי השמות שהוצהרו.
+      - מנגיד זאת לטיפוסיות נומינלית, שבה שמות או הצהרות הם שקובעים.
+      - נותן או מזהה דוגמה שבה שני טיפוסים בעלי שמות שונים ואותה צורה ניתנים להשמה זה לזה.
+    sources: [8]
+  - id: q06-4
+    type: open
+    text: "מתי תכתבו שומר טיפוס מוגדר על ידי המשתמש במקום להשתמש ב-typeof?"
+    concepts: [type-guard, user-defined-guard]
+    rubric: |
+      - מציין את המקרה ש-typeof לא מצליח להבדיל בין חברי האיחוד, כמו שני טיפוסי אובייקט.
+      - משתמש בצורת ההחזרה `p is T` (פרדיקט טיפוס) או מתאר אותה.
+      - מציין שהמהדר לא מאמת את גוף השומר, ולכן שומר שגוי שובר בשקט את בטיחות הטיפוסים.
+    sources: [3]

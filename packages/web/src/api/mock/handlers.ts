@@ -50,7 +50,7 @@ function outline(db: MockDb): ChapterOutline[] {
     }));
     return {
       dir: c.dir, title: c.title, level: 1, origin: "researched" as const, minutes: lessons.reduce((n, l) => n + l.minutes + PRACTICE_PER_LESSON, 0),
-      done: lessons.filter((l) => l.status === "done").length, total: lessons.length, lessons,
+      done: lessons.filter((l) => l.status === "done").length, total: lessons.length, lessons, translations: [],
     };
   });
 }
@@ -86,12 +86,13 @@ function otherSummary(c: (typeof OTHER_COURSES)[number]): CourseSummary {
   const total = reading + practice + exams;
   return {
     ...c.course, lessonCount: c.lessonCount, examCount: c.examCount, percent: c.percent, started: c.started, updated: c.updated,
+    language: "en", translations: [],
     time: { readingMinutes: reading, practiceMinutes: practice, examMinutes: exams, totalMinutes: total, remainingMinutes: Math.round(total * (1 - c.percent / 100)) },
   };
 }
 
 function tsSummary(db: MockDb): CourseSummary {
-  return { ...TS, lessonCount: LESSON_ORDER.length, examCount: EXAMS.length, time: tsTime(db), percent: progressOf(db).percent, started: db.completed.size > 0, updated: true };
+  return { ...TS, lessonCount: LESSON_ORDER.length, examCount: EXAMS.length, time: tsTime(db), percent: progressOf(db).percent, started: db.completed.size > 0, updated: true, language: "en", translations: [] };
 }
 
 function chatMessages(db: MockDb): ChatMessage[] {
@@ -349,6 +350,7 @@ export const handlers: Handlers = {
       exam: exam ? (examRows(db).find((r) => r.id === exam.id) ?? null) : null,
       ai: { available: db.aiAvailable() },
       answerCount: db.chat.filter((r) => r.msg.role === "assistant").length,
+      languages: ["en"],
     };
   },
 
@@ -385,6 +387,7 @@ export const handlers: Handlers = {
       attemptNumber: n + 1,
       questions: QUIZ_QUESTION_IDS.map((q) => learnerQuestion(BANK[q]!)),
       progress: progressOf(db),
+      languages: ["en"],
     };
   },
 
@@ -477,13 +480,14 @@ export const handlers: Handlers = {
   packages: (_, db) => ({
     packages: [
       ...db.packages,
-      { id: "pkg-aws", course: OTHER_COURSES[0].course, url: "github.com/friend/aws-saa", path: "", ref: "main", sha: "91be0d4", status: "update_available" as const, latestSha: "c07d2aa" },
+      { id: "pkg-aws", course: OTHER_COURSES[0].course, language: "en", translations: [], url: "github.com/friend/aws-saa", path: "", ref: "main", sha: "91be0d4", status: "update_available" as const, latestSha: "c07d2aa" },
     ],
   }),
 
   addPackage: ({ body }, db) => {
     const pkg = {
       id: `pkg-${++db.seq}`, course: { id: "new-course", title: "New course", monogram: "NC", hue: "pink" as const },
+      language: "en", translations: [] as string[],
       url: body.url, path: body.path ?? "", ref: body.ref ?? "main", sha: "0000000", status: "up_to_date" as const, latestSha: null,
     };
     db.packages.push(pkg as (typeof db.packages)[number]);

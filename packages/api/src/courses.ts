@@ -9,13 +9,14 @@ import type {
   LessonRef,
   Progress,
 } from "@selfschool/shared";
-import { quizMinutes } from "@selfschool/shared";
+import { quizMinutes, type TranslationManifest } from "@selfschool/shared";
 import { attemptHistory, awardXp, learnerQuestion, quizGateCleared, type SnapQ } from "./attempts.js";
 import { questionKey, type LightLesson, type LoadedCourse, type LoadedLesson } from "./catalog.js";
 import { answerCount } from "./chat.js";
 import { getCourse, loadCourses, type Ctx } from "./ctx.js";
 import { attempts, completions, lessonRevisions, packages } from "./db/schema.js";
 import { examRow } from "./exams.js";
+import { chapterLanguages, languagesOf, quizIn, titlesFor, translationFor } from "./i18n.js";
 import { cached } from "./summaryCache.js";
 import { HttpError } from "./util.js";
 
@@ -87,6 +88,7 @@ function buildOutline(ctx: Ctx, course: LoadedCourse): ChapterOutline[] {
       done: lessons.filter((l) => l.status === "done").length,
       total: lessons.length,
       lessons,
+      translations: [] as string[],
     };
   });
 }
@@ -116,6 +118,25 @@ export const courseTime = (ctx: Ctx, course: LoadedCourse): CourseTime =>
     return { readingMinutes: reading, practiceMinutes: practice, examMinutes: exams, totalMinutes: reading + practice + exams, remainingMinutes: left };
   });
 
+/** Titles in the reader's language, applied after the cached (source-language) summaries so the cache never mixes languages. */
+export function localizeOutline(ctx: Ctx, course: LoadedCourse, chapters: ChapterOutline[], t: TranslationManifest | null): ChapterOutline[] {
+  return chapters.map((c) => ({
+    ...c,
+    // read fresh, like the course's language list: a translation written by `school translate` appears at once
+    translations: chapterLanguages(ctx, course, c.dir),
+    ...(t ? { title: t.chapters[c.dir] ?? c.title, lessons: c.lessons.map((l) => ({ ...l, title: t.lessons[l.id] ?? l.title })) } : {}),
+  }));
+}
+
+export const localizeRef = <T extends { id: string; title: string }>(ref: T, t: TranslationManifest | null, kind: "lessons"): T =>
+  t?.[kind][ref.id] ? { ...ref, title: t[kind][ref.id]! } : ref;
+
+export function localizeSummary<T extends CourseSummary>(ctx: Ctx, s: T, course: LoadedCourse, lang: string | undefined): T {
+  const t = titlesFor(ctx, course, lang);
+  // the language list is read fresh: a translation written by `school translate` appears without any course changing
+  return { ...s, translations: languagesOf(ctx, course), ...(t?.title ? { title: t.title } : {}) };
+}
+
 export const courseSummary = (ctx: Ctx, course: LoadedCourse): CourseSummary =>
   cached(ctx, `summary:${course.id}`, () => {
     const done = completionMap(ctx, course.id);
@@ -132,16 +153,29 @@ export const courseSummary = (ctx: Ctx, course: LoadedCourse): CourseSummary =>
         const c = done.get(l.id);
         return !!c && (revs.get(l.id) ?? 1) > c.revision;
       }),
+      language: course.manifest.language,
+      translations: languagesOf(ctx, course),
     };
   });
 
-export function listCourses(ctx: Ctx): CourseSummary[] {
-  return loadCourses(ctx).map((c) => courseSummary(ctx, c));
+export function listCourses(ctx: Ctx, lang?: string): CourseSummary[] {
+  return loadCourses(ctx).map((c) => localizeSummary(ctx, courseSummary(ctx, c), c, lang));
 }
 
-export function courseDetail(ctx: Ctx, courseId: string): CourseDetail {
+export function courseDetail(ctx: Ctx, courseId: string, lang?: string): CourseDetail {
   const course = getCourse(ctx, courseId);
-  return cached(ctx, `detail:${course.id}`, () => {
+  const detail = cachedDetail(ctx, course);
+  const t = titlesFor(ctx, course, lang);
+  return {
+    ...localizeSummary(ctx, detail, course, lang),
+    description: t?.description ?? detail.description,
+    chapters: localizeOutline(ctx, course, detail.chapters, t),
+    resume: detail.resume ? localizeRef(detail.resume, t, "lessons") : null,
+  };
+}
+
+const cachedDetail = (ctx: Ctx, course: LoadedCourse): CourseDetail =>
+  cached(ctx, `detail:${course.id}`, () => {
     const pkg = ctx.db.select().from(packages).where(eq(packages.id, course.id)).get();
     const cur = currentLesson(ctx, course);
     return {
@@ -157,7 +191,6 @@ export function courseDetail(ctx: Ctx, courseId: string): CourseDetail {
       source: { repo: pkg?.url ?? `local:${course.dirName}`, sha: pkg?.sha ?? "", sourceCount: course.light.sourceCount },
     };
   });
-}
 
 // ---------- lesson ----------
 
@@ -175,19 +208,25 @@ export function findLesson(course: LoadedCourse, lessonId: string): LoadedLesson
   return l;
 }
 
-export function lessonView(ctx: Ctx, courseId: string, lessonId: string): Lesson {
+export function lessonView(ctx: Ctx, courseId: string, lessonId: string, lang?: string): Lesson {
   const course = getCourse(ctx, courseId);
   const l = findLesson(course, lessonId);
   const revs = latestRevisions(ctx, course.id);
-  const { standfirst, markdown } = splitStandfirst(l.body);
+  // a lesson with no translated file is shown in the course's own language, with its titles translated when listed
+  const t = translationFor(ctx, course, lang);
+  const titles = titlesFor(ctx, course, lang);
+  const tl = t?.lessons.get(l.id);
+  const { standfirst, markdown } = splitStandfirst(tl?.body ?? l.body);
   const quiz = l.quizId ? course.quizzes.get(l.quizId) : undefined;
+  const quizTitle = quiz ? quizIn(t, quiz.quiz).title : "";
+  const ref = (x: LoadedLesson) => (x.id === l.id && tl ? { id: x.id, title: tl.title } : localizeRef(lessonRef(x), titles, "lessons"));
   const exam = course.exams.find((e) => e.after === l.chapterDir);
   // Heal attempts finished before the gate counted provisional scores.
   if (l.quizId && !completionMap(ctx, course.id).has(l.id) && quizGateCleared(ctx, course.id, l.quizId)) completeLesson(ctx, course.id, l.id);
   return {
-    course: course.ref,
-    chapterTitle: l.chapterTitle,
-    lesson: lessonRef(l),
+    course: titles?.title ? { ...course.ref, title: titles.title } : course.ref,
+    chapterTitle: titles?.chapters[l.chapterDir] ?? l.chapterTitle,
+    lesson: ref(l),
     number: l.index + 1,
     total: course.lessons.length,
     revision: revs.get(l.id) ?? 1,
@@ -201,15 +240,17 @@ export function lessonView(ctx: Ctx, courseId: string, lessonId: string): Lesson
       return s ?? { n, title: `Source ${n}` };
     }),
     resources: l.resources,
-    prev: course.lessons[l.index - 1] ? lessonRef(course.lessons[l.index - 1]!) : null,
-    next: course.lessons[l.index + 1] ? lessonRef(course.lessons[l.index + 1]!) : null,
-    quiz: quiz ? { id: quiz.quiz.id, title: quiz.quiz.title, questionCount: quiz.quiz.questions.length } : null,
+    prev: course.lessons[l.index - 1] ? ref(course.lessons[l.index - 1]!) : null,
+    next: course.lessons[l.index + 1] ? ref(course.lessons[l.index + 1]!) : null,
+    quiz: quiz ? { id: quiz.quiz.id, title: quizTitle, questionCount: quiz.quiz.questions.length } : null,
     completed: completionMap(ctx, course.id).has(l.id),
     progress: progressOf(ctx, course),
-    chapters: outline(ctx, course),
+    chapters: localizeOutline(ctx, course, outline(ctx, course), titles),
     exam: exam ? examRow(ctx, course, exam) : null,
     ai: { available: ctx.aiAvailable() },
     answerCount: answerCount(ctx, course.id, l.id),
+    language: tl ? t!.lang : course.manifest.language,
+    languages: [course.manifest.language, ...languagesOf(ctx, course)],
   };
 }
 
@@ -233,24 +274,29 @@ export function completeLesson(ctx: Ctx, courseId: string, lessonId: string) {
 
 // ---------- quiz ----------
 
-export function quizView(ctx: Ctx, courseId: string, quizId: string): LearnerQuiz {
+export function quizView(ctx: Ctx, courseId: string, quizId: string, lang?: string): LearnerQuiz {
   const course = getCourse(ctx, courseId);
   const lq = course.quizzes.get(quizId);
   if (!lq) throw new HttpError(404, "quiz not found");
   const lesson = course.lessonById.get(lq.lessonId)!;
   const used = attemptHistory(ctx, course.id, "quiz", quizId).length;
+  const t = translationFor(ctx, course, lang);
+  const quiz = quizIn(t, lq.quiz);
+  const titles = titlesFor(ctx, course, lang);
   return {
-    course: course.ref,
-    lesson: lessonRef(lesson),
+    course: titles?.title ? { ...course.ref, title: titles.title } : course.ref,
+    lesson: t?.lessons.has(lesson.id) ? { id: lesson.id, title: t.lessons.get(lesson.id)!.title } : localizeRef(lessonRef(lesson), titles, "lessons"),
     quiz: {
-      id: lq.quiz.id,
-      title: lq.quiz.title,
-      passingPercentage: lq.quiz.passing_percentage,
-      maxAttempts: lq.quiz.max_attempts,
-      showAnswers: lq.quiz.show_answers,
+      id: quiz.id,
+      title: quiz.title,
+      passingPercentage: quiz.passing_percentage,
+      maxAttempts: quiz.max_attempts,
+      showAnswers: quiz.show_answers,
     },
+    language: t?.quizzes.has(quizId) ? t.lang : course.manifest.language,
+    languages: [course.manifest.language, ...languagesOf(ctx, course)],
     attemptNumber: used + 1,
-    questions: lq.quiz.questions.map((q): SnapQ => ({ id: questionKey(course.id, q.id), domain: null, chapter: lq.chapterDir, lessonId: lq.lessonId, q })).map(learnerQuestion),
+    questions: quiz.questions.map((q): SnapQ => ({ id: questionKey(course.id, q.id), domain: null, chapter: lq.chapterDir, lessonId: lq.lessonId, q })).map(learnerQuestion),
     progress: progressOf(ctx, course),
   };
 }

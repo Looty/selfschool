@@ -69,6 +69,10 @@ export const courseSummarySchema = courseRefSchema.extend({
   started: z.boolean(),
   /** A newer package revision changed a lesson the learner already completed. */
   updated: z.boolean(),
+  /** The language the course is written in. */
+  language: z.string().default("en"),
+  /** Other languages the package has translations for (the course's own language is not listed). */
+  translations: z.array(z.string()).default([]),
 });
 export type CourseSummary = z.infer<typeof courseSummarySchema>;
 
@@ -101,6 +105,8 @@ export const chapterOutlineSchema = z.object({
   done: z.number().int(),
   total: z.number().int(),
   lessons: z.array(lessonRowSchema),
+  /** Languages with at least one translated file in this chapter (the course's own language is not listed). */
+  translations: z.array(z.string()).default([]),
 });
 export type ChapterOutline = z.infer<typeof chapterOutlineSchema>;
 
@@ -226,6 +232,10 @@ export const lessonSchema = z.object({
   exam: examRowSchema.nullable(),
   ai: aiStatusSchema,
   answerCount: z.number().int(),
+  /** Language of the text in this response (the course's own, or the requested translation); sets reading direction. */
+  language: z.string().optional(),
+  /** Every language the course can be read in: its own first, then its translations. */
+  languages: z.array(z.string()).default([]),
 });
 export type Lesson = z.infer<typeof lessonSchema>;
 
@@ -298,6 +308,10 @@ export const learnerQuizSchema = z.object({
   attemptNumber: z.number().int(),
   questions: z.array(learnerQuestionSchema).min(1),
   progress: progressSchema,
+  /** Language of the text in this response; sets reading direction. */
+  language: z.string().optional(),
+  /** Every language the course can be read in: its own first, then its translations. */
+  languages: z.array(z.string()).default([]),
 });
 export type LearnerQuiz = z.infer<typeof learnerQuizSchema>;
 
@@ -456,6 +470,8 @@ export const attemptResultSchema = z.object({
     }),
   ),
   ai: aiStatusSchema,
+  /** Language of the question text in this response; sets reading direction. */
+  language: z.string().optional(),
 });
 export type AttemptResult = z.infer<typeof attemptResultSchema>;
 
@@ -640,6 +656,9 @@ export const updateSettingsSchema = z.object({ models: modelsSchema.partial() })
 export const packageInfoSchema = z.object({
   id,
   course: courseRefSchema,
+  /** The course's own language, and the translations it has (package or extensions folder). */
+  language: z.string().default("en"),
+  translations: z.array(z.string()).default([]),
   url: z.string(),
   path: z.string(),
   ref: z.string(),
@@ -743,7 +762,21 @@ export const removedCourseSchema = z.object({ id: z.string(), title: z.string(),
 export type RemovedCourse = z.infer<typeof removedCourseSchema>;
 export const removedCoursesSchema = z.object({ courses: z.array(removedCourseSchema) });
 
-export const reportQuestionSchema = z.object({ reason: z.string().optional() });
+/**
+ * The portable backup file (`GET /backup/portable`, `POST /restore`): every table's rows as JSON, where each course
+ * came from, and the browser-side preferences (added by the web app, empty from the api).
+ */
+export const portableBackupSchema = z.object({
+  format: z.literal("selfschool-backup"),
+  version: z.literal(1),
+  exportedAt: z.string(),
+  tables: z.record(z.string(), z.array(z.record(z.string(), z.union([z.string(), z.number(), z.null()])))),
+  courses: z.array(z.object({ id: z.string(), url: z.string(), path: z.string(), ref: z.string(), sha: z.string() })),
+  prefs: z.record(z.string(), z.string()).default({}),
+});
+export type PortableBackup = z.infer<typeof portableBackupSchema>;
+
+export const reportQuestionSchema =z.object({ reason: z.string().optional() });
 
 // ---------- route table ----------
 
