@@ -9,7 +9,7 @@ import { validateCoursePackage } from "../src/node.js";
 
 const sample = fileURLToPath(new URL("../../../examples/sample-courses/typescript-fundamentals", import.meta.url));
 /** A small Hebrew translation of the sample course (titles, one lesson, one quiz), laid out as `i18n/he/...`. */
-export const fixture = fileURLToPath(new URL("./fixtures/i18n", import.meta.url));
+const fixture = fileURLToPath(new URL("./fixtures/i18n", import.meta.url));
 
 let dir: string;
 beforeEach(() => {
