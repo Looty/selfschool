@@ -1,13 +1,18 @@
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { repoCourses, setup } from "./helpers.js";
 
-/** A private copy of the sample course (it has a Hebrew translation of one lesson, one quiz and the titles). */
+/** The shared Hebrew fixture: titles, one lesson and one quiz of the sample course. */
+const fixture = fileURLToPath(new URL("../../shared/test/fixtures/i18n", import.meta.url));
+
+/** A private copy of the sample course with that Hebrew translation added. */
 function sampleDir(): string {
   const dir = mkdtempSync(join(tmpdir(), "selfschool-i18n-api-"));
   cpSync(join(repoCourses, "typescript-fundamentals"), join(dir, "typescript-fundamentals"), { recursive: true });
+  cpSync(fixture, join(dir, "typescript-fundamentals", "i18n"), { recursive: true });
   return dir;
 }
 

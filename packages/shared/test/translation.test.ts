@@ -8,16 +8,19 @@ import { isRtl, quizParityIssues, quizSchema } from "../src/index.js";
 import { validateCoursePackage } from "../src/node.js";
 
 const sample = fileURLToPath(new URL("../../../examples/sample-courses/typescript-fundamentals", import.meta.url));
+/** A small Hebrew translation of the sample course (titles, one lesson, one quiz), laid out as `i18n/he/...`. */
+export const fixture = fileURLToPath(new URL("./fixtures/i18n", import.meta.url));
 
 let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), "selfschool-i18n-"));
   cpSync(sample, dir, { recursive: true });
+  cpSync(fixture, join(dir, "i18n"), { recursive: true });
 });
 afterEach(() => rmSync(dir, { recursive: true, force: true }));
 
 const quizFile = () => join(dir, "i18n/he/02-narrowing/quiz-03.yaml");
-const resetQuiz = () => cpSync(join(sample, "i18n/he/02-narrowing/quiz-03.yaml"), quizFile());
+const resetQuiz = () => cpSync(join(fixture, "he/02-narrowing/quiz-03.yaml"), quizFile());
 // biome-ignore lint/suspicious/noExplicitAny: a parsed quiz is edited freely to break it in different ways
 type Loose = any;
 const editQuiz = (fn: (q: Loose) => void) => {
@@ -65,7 +68,7 @@ describe("translations in a course package", () => {
     const lesson = join(dir, "i18n/he/02-narrowing/lesson-01.md");
     writeFileSync(lesson, readFileSync(lesson, "utf8").replace("id: l04", "id: l99"));
     expect(problems().some((i) => /lesson id is "l99"/.test(i.message))).toBe(true);
-    cpSync(join(sample, "i18n/he/02-narrowing/lesson-01.md"), lesson);
+    cpSync(join(fixture, "he/02-narrowing/lesson-01.md"), lesson);
     cpSync(join(dir, "i18n/he"), join(dir, "i18n/Hebrew"), { recursive: true });
     expect(problems().some((i) => i.file === "i18n/Hebrew")).toBe(true);
   });
