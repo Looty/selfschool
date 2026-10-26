@@ -86,7 +86,7 @@ export function RestoreDialog({ onClose }: { onClose: () => void }) {
               </div>
             ) : null}
             <div className="flex justify-end">
-              <Button variant="primary" size="sm" onClick={() => location.assign("/")}>
+              <Button variant="primary" size="sm" onClick={() => location.assign(import.meta.env.BASE_URL)}>
                 Reload the app
               </Button>
             </div>

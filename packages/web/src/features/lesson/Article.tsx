@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import type { Lesson } from "@selfschool/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { InlineMarkdown } from "../../components/InlineMarkdown";
+import { TextLink } from "../../components/TextLink";
 import { Button, SectionLabel } from "../../ui";
 import { DownloadIcon } from "./icons";
 import { Markdown } from "./MarkdownView";
@@ -186,9 +187,9 @@ export function Article({
               <li key={s.n} id={`source-${s.n}`} className="lesson-source scroll-mt-6 px-1 py-0.5">
                 [{s.n}]{" "}
                 {s.url ? (
-                  <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-text underline decoration-border2 underline-offset-2">
+                  <TextLink href={s.url} className="text-text underline decoration-border2 underline-offset-2">
                     <InlineMarkdown text={s.title} />
-                  </a>
+                  </TextLink>
                 ) : (
                   <InlineMarkdown text={s.title} />
                 )}

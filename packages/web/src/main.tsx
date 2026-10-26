@@ -15,6 +15,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { App } from "./App";
+import { routerBasename } from "./basePath";
 import { restoreContentWidth, restoreTextSize, syncPrefsAcrossTabs } from "./features/settings/prefs";
 
 restoreContentWidth();
@@ -28,7 +29,7 @@ const queryClient = new QueryClient({
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={routerBasename(import.meta.env.BASE_URL)}>
         <App />
       </BrowserRouter>
     </QueryClientProvider>

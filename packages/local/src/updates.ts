@@ -34,7 +34,7 @@ export function watchForNewVersion(flush: () => Promise<void>) {
 
   const check = async () => {
     try {
-      const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" });
+      const res = await fetch(`${import.meta.env.BASE_URL}version.json?t=${Date.now()}`, { cache: "no-store" });
       if (res.ok && ((await res.json()) as { build?: string }).build !== __BUILD_ID__) show();
     } catch {
       /* offline: try again later */

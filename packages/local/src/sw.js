@@ -3,9 +3,14 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 
+// The page's own /api/ requests, plus <base>api/ links opened in a new tab (a navigation only reaches a worker whose scope
+// covers it, and on GitHub Pages the scope is /selfschool/). Keep in step with src/apiPath.ts.
+const scopedApi = `${new URL(self.registration.scope).pathname}api/`;
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
-  if (url.origin !== self.location.origin || !url.pathname.startsWith("/api/") || event.request.method !== "GET") return;
+  const api = url.pathname.startsWith("/api/") || url.pathname.startsWith(scopedApi);
+  if (url.origin !== self.location.origin || !api || event.request.method !== "GET") return;
   event.respondWith(answer(event));
 });
 

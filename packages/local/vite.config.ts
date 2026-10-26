@@ -21,7 +21,7 @@ function localEntry(): Plugin {
   };
 }
 
-/** Publishes src/sw.js at /local-sw.js (dev server and build output) so it can control the whole origin. */
+/** Publishes src/sw.js at <base>local-sw.js (dev server and build output) so it can control every page under the base. */
 function serviceWorker(): Plugin {
   const file = here("./src/sw.js");
   return {
@@ -82,6 +82,9 @@ function sampleZip(): Plugin {
 }
 
 export default defineConfig({
+  // "/" by default; the GitHub Pages build sets SELFSCHOOL_BASE=/selfschool/. Only URLs that reach the network follow it:
+  // `/api/...` stays root-absolute because the in-page transport and the service worker answer it.
+  base: process.env.SELFSCHOOL_BASE ?? "/",
   root: here("../web"),
   cacheDir: here("./node_modules/.vite"),
   define: {
