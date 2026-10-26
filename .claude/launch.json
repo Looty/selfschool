@@ -12,6 +12,12 @@
       "runtimeExecutable": "corepack",
       "runtimeArgs": ["pnpm", "--filter", "@selfschool/local", "dev"],
       "port": 5175
+    },
+    {
+      "name": "local-pages",
+      "runtimeExecutable": "corepack",
+      "runtimeArgs": ["pnpm", "--filter", "@selfschool/local", "exec", "vite", "preview", "--outDir", "node_modules/.pages", "--base", "/selfschool/", "--port", "5176", "--strictPort"],
+      "port": 5176
     }
   ]
 }

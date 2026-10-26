@@ -69,6 +69,19 @@ pnpm --filter @selfschool/local build # a static site in packages/local/dist tha
 - **Updates.** If you host the built site, a deploy replaces the app files under every visitor's browser while their data stays put: the database is upgraded on the next start, and an open tab shows a "new version available, reload" bar (your progress is saved before it reloads).
 - **It runs next to Docker.** It uses its own port (`5175`) and storage, and shares no files with the containers, so both can be up at the same time.
 
+### Deploy to GitHub Pages
+
+`.github/workflows/pages.yml` publishes this browser build to GitHub Pages on every push to `main` (or by hand from the Actions tab). Turn it on once: Settings > Pages > Source: "GitHub Actions". The workflow builds the workspace, rebuilds `packages/local` for the `/selfschool/` sub-path, copies `index.html` to `404.html` so deep links survive a reload, and deploys `packages/local/dist`.
+
+To build and check a sub-path build locally:
+
+```bash
+SELFSCHOOL_BASE=/selfschool/ pnpm --filter @selfschool/local build
+pnpm --filter @selfschool/local exec vite preview --base /selfschool/
+```
+
+The deployed site is the same browser mode as above: progress lives in each visitor's browser, per site. To move between the hosted site, a local build and Docker, export a backup in one and restore it in the other.
+
 ## Add or create courses
 
 **Add a ready-made course.** Settings → Course packages: paste a repository URL, tick the courses you want and import. A course from a repository is pinned to a commit, so you can see when its author updates it. You can also drop a course `.zip` there, or just copy a course folder into your courses folder.

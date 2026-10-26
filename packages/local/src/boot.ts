@@ -2,6 +2,7 @@ import initSqlJs from "sql.js";
 import wasmUrl from "sql.js/dist/sql-wasm.wasm?url";
 import { createApp } from "../../api/src/app.js";
 import { openDb } from "../../api/src/db/client.js";
+import { apiPath } from "./apiPath.js";
 import { loadSaved, save } from "./persist.js";
 import { configureSqlite } from "./shims/better-sqlite3.js";
 import { watchForNewVersion } from "./updates.js";
@@ -63,10 +64,11 @@ function installTransport(handle: (req: Request) => Response | Promise<Response>
   const local = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response | undefined> => {
     const req = new Request(input, init);
     const url = new URL(req.url);
-    if (url.origin !== location.origin || !url.pathname.startsWith("/api/")) return undefined;
+    const path = url.origin === location.origin ? apiPath(url.pathname, import.meta.env.BASE_URL) : undefined;
+    if (path === undefined) return undefined;
     const write = req.method !== "GET" && req.method !== "HEAD";
     const res = await handle(
-      new Request(`${url.origin}${url.pathname.slice("/api".length)}${url.search}`, {
+      new Request(`${url.origin}${path}${url.search}`, {
         method: req.method,
         headers: req.headers,
         body: write ? await req.arrayBuffer() : null,
@@ -128,12 +130,16 @@ async function installServiceWorker(handle: (req: Request) => Response | Promise
   navigator.serviceWorker.addEventListener("message", async (e: MessageEvent) => {
     if (e.data?.type !== "selfschool-api") return;
     const url = new URL(e.data.url as string);
-    const res = await handle(new Request(`${url.origin}${url.pathname.slice("/api".length)}${url.search}`));
+    const path = apiPath(url.pathname, import.meta.env.BASE_URL) ?? url.pathname;
+    const res = await handle(new Request(`${url.origin}${path}${url.search}`));
     const body = await res.arrayBuffer();
     e.ports[0]?.postMessage({ status: res.status, headers: [...res.headers], body }, [body]);
   });
   try {
-    await navigator.serviceWorker.register("/local-sw.js", { scope: "/" });
+    // Scoped to the base (e.g. /selfschool/ on GitHub Pages) so it never claims other sites on a shared origin.
+    // It still sees this page's root-absolute /api/ requests: a worker handles every request of a page it controls.
+    const base = import.meta.env.BASE_URL;
+    await navigator.serviceWorker.register(`${base}local-sw.js`, { scope: base });
     await navigator.serviceWorker.ready;
     // First visit: the worker claims this page right after activating.
     if (!navigator.serviceWorker.controller) {

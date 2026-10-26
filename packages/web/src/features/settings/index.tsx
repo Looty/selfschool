@@ -582,7 +582,7 @@ function DangerZone() {
     setError(null);
     try {
       await purgeLocalData();
-      location.assign("/");
+      location.assign(import.meta.env.BASE_URL);
     } catch {
       setError("Could not delete the data. Close other Selfschool tabs and try again.");
       setBusy(false);

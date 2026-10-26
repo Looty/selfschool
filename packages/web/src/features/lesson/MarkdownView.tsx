@@ -2,6 +2,7 @@ import { isValidElement, useMemo, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { CodeBlock } from "../../components/code/CodeBlock";
+import { TextLink } from "../../components/TextLink";
 import { remarkGlossary, type GlossaryEntry } from "./glossary";
 import { linkCitations, slugify } from "./markdown";
 
@@ -33,11 +34,7 @@ const components: Components = {
       );
     }
     if (href?.startsWith("#")) return <a href={href}>{children}</a>;
-    return (
-      <a href={href} target="_blank" rel="noopener noreferrer">
-        {children}
-      </a>
-    );
+    return <TextLink href={href}>{children}</TextLink>;
   },
   h2: ({ children }) => <h2 id={slugify(textOf(children))}>{children}</h2>,
   h3: ({ children }) => <h3 id={slugify(textOf(children))}>{children}</h3>,
