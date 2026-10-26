@@ -4,6 +4,7 @@ title: Course Title
 short_intro: One-line pitch.
 description: |
   Markdown description: who it is for, what they will be able to do, prerequisites.
+language: en                     # the language the course is written in (en, he, ...); translations go in i18n/<language>/
 level: Beginner                  # Beginner | Intermediate | Advanced
 hue: blue                        # optional: blue | orange | teal | pink (default derived from id)
 monogram: AB                     # optional: 2-4 letters on covers and bands (default: title initials)

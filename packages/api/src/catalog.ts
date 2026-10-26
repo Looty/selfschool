@@ -629,6 +629,11 @@ export class Catalog {
   /** Time between the previous burst of `load()` calls and the current one. */
   private requestGap = 0;
 
+  /** URL prefix the browser reaches the api under (resource links in lesson text). */
+  get publicPrefix(): string {
+    return this.prefix;
+  }
+
   get generation(): number {
     return this.gen;
   }

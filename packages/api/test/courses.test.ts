@@ -8,7 +8,7 @@ describe("course loading", () => {
     const h = setup();
     const { json } = await h.get("/courses");
     expect(json.courses).toEqual([
-      { id: "mini", title: "Mini Course", monogram: "MC", hue: expect.any(String), lessonCount: 3, examCount: 1, time: expect.any(Object), percent: 0, started: false, updated: false },
+      { id: "mini", title: "Mini Course", monogram: "MC", hue: expect.any(String), lessonCount: 3, examCount: 1, time: expect.any(Object), percent: 0, started: false, updated: false, language: "en", translations: [] },
     ]);
   });
 

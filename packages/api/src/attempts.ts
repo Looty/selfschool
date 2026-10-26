@@ -12,6 +12,7 @@ import type {
 import { questionKey, type LoadedCourse } from "./catalog.js";
 import { completeLesson } from "./courses.js";
 import { getCourse, type Ctx } from "./ctx.js";
+import { quizIn, translationFor } from "./i18n.js";
 import { attemptAnswers, attempts, examInstances, jobs, type questions, xpEvents } from "./db/schema.js";
 import { enqueueJob } from "./jobs.js";
 import { HttpError, newId, sha256, shortAnswerMatches } from "./util.js";
@@ -79,9 +80,12 @@ export interface AttemptData {
   answers: Map<string, AnswerRow>;
   blueprint: ExamBlueprint | null;
   lessonId: string | null;
+  /** Language of the question text (a translation applies to quiz attempts only; exams stay in the course's language). */
+  language: string;
 }
 
-export function loadAttempt(ctx: Ctx, attemptId: string): AttemptData {
+/** `lang` is the reader's language (see i18n.ts); the stored attempt does not depend on it. */
+export function loadAttempt(ctx: Ctx, attemptId: string, lang?: string): AttemptData {
   const { db } = ctx;
   const row = db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   if (!row) throw new HttpError(404, "attempt not found");
@@ -93,14 +97,18 @@ export function loadAttempt(ctx: Ctx, attemptId: string): AttemptData {
   let qs: SnapQ[];
   let blueprint: ExamBlueprint | null = null;
   let lessonId: string | null = null;
+  let language = course.manifest.language;
   if (row.kind === "quiz") {
     const lq = course.quizzes.get(row.targetId);
     if (!lq) throw new HttpError(404, "quiz no longer exists");
-    title = lq.quiz.title;
-    passing = lq.quiz.passing_percentage;
-    showAnswers = lq.quiz.show_answers;
+    const translation = translationFor(ctx, course, lang);
+    const quiz = quizIn(translation, lq.quiz);
+    if (translation?.quizzes.has(quiz.id)) language = translation.lang;
+    title = quiz.title;
+    passing = quiz.passing_percentage;
+    showAnswers = quiz.show_answers;
     lessonId = lq.lessonId;
-    qs = lq.quiz.questions.map((q) => ({ id: questionKey(course.id, q.id), domain: null, chapter: lq.chapterDir, lessonId: lq.lessonId, q }));
+    qs = quiz.questions.map((q) => ({ id: questionKey(course.id, q.id), domain: null, chapter: lq.chapterDir, lessonId: lq.lessonId, q }));
   } else {
     const exam = course.exams.find((e) => e.id === row.targetId);
     const inst = row.examInstanceId ? db.select().from(examInstances).where(eq(examInstances.id, row.examInstanceId)).get() : undefined;
@@ -116,7 +124,7 @@ export function loadAttempt(ctx: Ctx, attemptId: string): AttemptData {
     const job = a.jobId ? db.select({ status: jobs.status }).from(jobs).where(eq(jobs.id, a.jobId)).get() : undefined;
     answers.set(a.questionId, { ...a, jobStatus: job?.status ?? null });
   }
-  return { row, course, kind: row.kind, title, passing, showAnswers, questions: qs, answers, blueprint, lessonId };
+  return { row, course, kind: row.kind, title, passing, showAnswers, questions: qs, answers, blueprint, lessonId, language };
 }
 
 /** Whether answer keys / correctness may be shown for this attempt right now. */
@@ -274,8 +282,8 @@ function domainLesson(a: AttemptData, s: SnapQ): LessonRef | null {
   return l ? { id: l.id, title: l.title } : null;
 }
 
-export function buildAttemptResult(ctx: Ctx, attemptId: string): AttemptResult {
-  const a = loadAttempt(ctx, attemptId);
+export function buildAttemptResult(ctx: Ctx, attemptId: string, lang?: string): AttemptResult {
+  const a = loadAttempt(ctx, attemptId, lang);
   const sum = summarize(a);
   const revealed = isRevealed(a);
   const answers: AnswerResult[] = [];
@@ -323,6 +331,7 @@ export function buildAttemptResult(ctx: Ctx, attemptId: string): AttemptResult {
     missed,
     history: attemptHistory(ctx, a.row.packageId, a.kind, a.row.targetId),
     ai: { available: ctx.aiAvailable() },
+    language: a.language,
   };
 }
 
@@ -450,9 +459,9 @@ function gradeContext(a: AttemptData, s: SnapQ): string {
   return parts.join("\n\n").slice(0, 30_000);
 }
 
-export function submitAnswer(ctx: Ctx, attemptId: string, questionId: string, input: AnswerInput): AnswerResult {
+export function submitAnswer(ctx: Ctx, attemptId: string, questionId: string, input: AnswerInput, lang?: string): AnswerResult {
   const { db } = ctx;
-  const a = loadAttempt(ctx, attemptId);
+  const a = loadAttempt(ctx, attemptId, lang);
   if (a.row.finishedAt !== null) throw new HttpError(409, "attempt already finished");
   const snap = a.questions.find((s) => s.id === questionId);
   if (!snap) throw new HttpError(404, "question is not part of this attempt");
@@ -544,7 +553,7 @@ export function submitAnswer(ctx: Ctx, attemptId: string, questionId: string, in
   });
   if (values.correct) awardXp(ctx, 2, "answer_correct", `${attemptId}:${questionId}`);
 
-  const fresh = loadAttempt(ctx, attemptId);
+  const fresh = loadAttempt(ctx, attemptId, lang);
   return answerView(fresh, snap, fresh.answers.get(questionId))!;
 }
 
@@ -563,14 +572,14 @@ export function settleAttempt(ctx: Ctx, attemptId: string): void {
   if (s.passed) awardXp(ctx, a.kind === "exam" ? 100 : 30, `${a.kind}_pass`, `${a.row.packageId}:${a.row.targetId}`);
 }
 
-export function finishAttempt(ctx: Ctx, attemptId: string): AttemptResult {
+export function finishAttempt(ctx: Ctx, attemptId: string, lang?: string): AttemptResult {
   const row = ctx.db.select().from(attempts).where(eq(attempts.id, attemptId)).get();
   if (!row) throw new HttpError(404, "attempt not found");
   if (row.finishedAt === null) {
     ctx.db.update(attempts).set({ finishedAt: ctx.now() }).where(eq(attempts.id, attemptId)).run();
   }
   settleAttempt(ctx, attemptId);
-  return buildAttemptResult(ctx, attemptId);
+  return buildAttemptResult(ctx, attemptId, lang);
 }
 
 /** Applies a validated grade-job result to the answer row that queued it. */

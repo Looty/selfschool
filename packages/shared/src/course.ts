@@ -58,6 +58,8 @@ export const courseManifestSchema = z.object({
   title: z.string().min(1),
   short_intro: z.string().min(1),
   description: z.string().default(""),
+  /** Language the course is written in (two-letter code, e.g. "en"); translations live in `i18n/<language>/` (translation.ts). */
+  language: z.string().regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "use a language code such as en or he").default("en"),
   level: z.string().min(1),
   /** Course color; default is derived from the id by the app. */
   hue: z.enum(["blue", "orange", "teal", "pink"]).optional(),

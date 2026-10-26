@@ -91,7 +91,7 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
           subline={<Link to={lessonHref} className="text-text2 no-underline">Lesson · {quiz.lesson.title}</Link>}
           right={<span className="text-[13px] text-text2">RESULTS · QUIZ</span>}
         />
-        <Narrow width={720}>
+        <Narrow width={720} language={view.language}>
           <QuizResults attempt={view} lessonHref={lessonHref} nextHref={nextHref} nextTitle={nextTitle} maxAttempts={quiz.quiz.maxAttempts} onRetake={onRetake} />
         </Narrow>
       </Page>
@@ -115,7 +115,7 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
           </span>
         }
       />
-      <Narrow width={720} className="gap-6">
+      <Narrow width={720} className="gap-6" language={quiz.language}>
         <Link to={lessonHref} className="-mb-3 w-fit text-sm text-text2 no-underline hover:text-text">
           ← Back to the lesson: {quiz.lesson.title}
         </Link>

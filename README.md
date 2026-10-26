@@ -48,6 +48,7 @@ Without the runner everything else works, and AI features show "AI is paused".
 | `pnpm school doctor` | Checks Docker, the API, the database, the runner and the Claude CLI |
 | `pnpm school new-id "<title>"` | Prints a unique id for a new course |
 | `pnpm school validate <course folder>` | Checks a course against the format rules |
+| `pnpm school translate <course folder or id> --lang he` | Translates a course with your Claude CLI into `extensions/<id>/i18n/he/` (yours, the package is not touched). `--dry-run` sizes it first, a second run resumes, `--into-package` writes an author's own `i18n/`. Every file is checked (code blocks, links and quiz structure must come back unchanged) and retried; the app then offers the language in Settings and on the course page. Docker only: the browser build has no way to run it. |
 | `pnpm test` / `pnpm typecheck` | Run the tests / the type checks |
 | `pnpm check` | The whole CI sequence in one go: install, build, lint, typecheck, test |
 

@@ -86,12 +86,13 @@ function otherSummary(c: (typeof OTHER_COURSES)[number]): CourseSummary {
   const total = reading + practice + exams;
   return {
     ...c.course, lessonCount: c.lessonCount, examCount: c.examCount, percent: c.percent, started: c.started, updated: c.updated,
+    language: "en", translations: [],
     time: { readingMinutes: reading, practiceMinutes: practice, examMinutes: exams, totalMinutes: total, remainingMinutes: Math.round(total * (1 - c.percent / 100)) },
   };
 }
 
 function tsSummary(db: MockDb): CourseSummary {
-  return { ...TS, lessonCount: LESSON_ORDER.length, examCount: EXAMS.length, time: tsTime(db), percent: progressOf(db).percent, started: db.completed.size > 0, updated: true };
+  return { ...TS, lessonCount: LESSON_ORDER.length, examCount: EXAMS.length, time: tsTime(db), percent: progressOf(db).percent, started: db.completed.size > 0, updated: true, language: "en", translations: [] };
 }
 
 function chatMessages(db: MockDb): ChatMessage[] {
@@ -349,6 +350,7 @@ export const handlers: Handlers = {
       exam: exam ? (examRows(db).find((r) => r.id === exam.id) ?? null) : null,
       ai: { available: db.aiAvailable() },
       answerCount: db.chat.filter((r) => r.msg.role === "assistant").length,
+      languages: ["en"],
     };
   },
 

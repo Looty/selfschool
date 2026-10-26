@@ -4,7 +4,9 @@ import type { ChapterOutline, CourseDetail, ExamRow } from "@selfschool/shared";
 import { useCourse, useCourses, useExtensions, useProposeExtension, useSettings } from "../../api/hooks";
 import { Badge, Button, Monogram, ProgressBar, SectionLabel, cx } from "../../ui";
 import { formatDuration } from "@selfschool/shared";
+import { readingLanguage } from "../../api/language";
 import { InlineMarkdown } from "../../components/InlineMarkdown";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseCard } from "../dashboard/CourseCard";
 import { plural } from "../dashboard/logic";
 import { AiPausedNotice, Icon, PageError, PageLoading } from "../dashboard/shared";
@@ -83,7 +85,10 @@ export function CourseView({ course, paused }: { course: CourseDetail; paused: b
                 {course.description ? <p className="m-0 mt-2 max-w-[128ch] text-[15px] text-text2"><InlineMarkdown text={course.description} /></p> : null}
               </div>
             </div>
-            <div className="text-right font-mono text-xs uppercase tracking-[0.06em] text-hue-ink">{heroMeta(course)}</div>
+            <div className="flex flex-col items-end gap-2">
+              <div className="text-right font-mono text-xs uppercase tracking-[0.06em] text-hue-ink">{heroMeta(course)}</div>
+              <LanguageSwitch languages={[course.language, ...course.translations]} current={readingLanguage(course)} />
+            </div>
           </div>
         </div>
         <ProgressBar rail value={course.progress.percent} label="Course progress" className="absolute inset-x-0 bottom-0 rounded-none" />

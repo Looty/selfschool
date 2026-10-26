@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { textDirection } from "../../api/language";
 import { Button, cx } from "../../ui";
 import { InfoIcon } from "./icons";
 
@@ -7,9 +8,9 @@ export function Page({ children }: { children: ReactNode }) {
   return <div className="min-h-[calc(100vh-56px)] bg-bg">{children}</div>;
 }
 
-export function Narrow({ width, children, className }: { width: number; children: ReactNode; className?: string }) {
+export function Narrow({ width, children, className, language }: { width: number; children: ReactNode; className?: string; language?: string | undefined }) {
   return (
-    <div className={cx("mx-auto flex flex-col gap-6 px-4 pb-14 pt-7 sm:px-7", className)} style={{ maxWidth: width }}>
+    <div dir={textDirection(language)} lang={language} className={cx("mx-auto flex flex-col gap-6 px-4 pb-14 pt-7 sm:px-7", className)} style={{ maxWidth: width }}>
       {children}
     </div>
   );

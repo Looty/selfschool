@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import type { Lesson, LessonRef } from "@selfschool/shared";
+import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseBand, cx } from "../../ui";
 import { ContentsMenu } from "./ContentsMenu";
 import { ChevronLeft, ChevronRight } from "./icons";
@@ -46,6 +47,7 @@ export function LessonBand({ lesson }: { lesson: Lesson }) {
       maxWidth={1180}
       right={
         <>
+          <LanguageSwitch languages={lesson.languages} current={lesson.language ?? lesson.languages[0] ?? ""} />
           <span className="mr-1.5 font-mono text-[13px] text-text2" aria-label={`Lesson ${lesson.number} of ${lesson.total}`}>
             <span className="text-[22px] font-semibold tracking-[-0.02em] text-text">{pad(lesson.number)}</span> / {lesson.total}
           </span>

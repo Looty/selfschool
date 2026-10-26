@@ -14,6 +14,8 @@ import {
   type RouteResponse,
 } from "@selfschool/shared";
 
+import { loadContentLanguage } from "./language";
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -36,9 +38,13 @@ export const httpTransport: Transport = async (name, input) => {
   const qs = query
     ? "?" + new URLSearchParams(Object.entries(query).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)])).toString()
     : "";
+  const lang = loadContentLanguage();
+  const headers: Record<string, string> = {};
+  if (def.body) headers["content-type"] = "application/json";
+  if (lang) headers["x-selfschool-lang"] = lang;
   const res = await fetch(`/api${buildPath(def.path, params)}${qs}`, {
     method: def.method,
-    headers: def.body ? { "content-type": "application/json" } : undefined,
+    headers,
     body: def.body ? JSON.stringify(input.body ?? {}) : undefined,
   });
   if (!res.ok) {

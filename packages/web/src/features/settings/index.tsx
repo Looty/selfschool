@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
-import { useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { PackageInfo, Settings } from "@selfschool/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getPackageUpdates, getRemoved, restoreCourse } from "../../api/client";
 import { usePackages, useSettings, useUpdateSettings } from "../../api/hooks";
+import { COMMON_LANGUAGES, languageName, loadContentLanguage, saveContentLanguage } from "../../api/language";
 import { LOCAL, describeLastBackup, loadLastBackup, markBackupDone } from "./backup";
 import { ImportDialog, type ImportSource } from "./ImportDialog";
+import { Modal } from "./Modal";
+import { downloadPortableBackup } from "./portable";
+import { purgeLocalData } from "./purge";
+import { RestoreDialog } from "./RestoreDialog";
 import { RemoveDialog } from "./RemoveDialog";
 import { currentTheme } from "../../theme";
 import { Badge, Button, Segmented, cx, notifySaved } from "../../ui";
@@ -33,6 +38,7 @@ export default function SettingsFeature() {
       <Tutor />
       <Packages />
       <Data />
+      {LOCAL ? <DangerZone /> : null}
     </div>
   );
 }
@@ -68,6 +74,34 @@ function Row({ title, help, children }: { title: string; help?: ReactNode; child
 const selectCls = "h-9 rounded-control border border-border2 bg-bg px-3 text-text disabled:cursor-not-allowed disabled:opacity-50";
 
 // ---------- Appearance ----------
+
+/** Which language to read course text in, where a course has a translation. Courses without it stay in their own language. */
+function ContentLanguage() {
+  const qc = useQueryClient();
+  const [value, setValue] = useState(loadContentLanguage);
+  return (
+    <Row title="Course language" help="Lessons and quizzes appear in this language when the course has a translation. Otherwise they stay in the course's own language.">
+      <select
+        aria-label="Course language"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          saveContentLanguage(e.target.value);
+          void qc.invalidateQueries();
+          notifySaved();
+        }}
+        className={selectCls}
+      >
+        <option value="">Each course's own</option>
+        {COMMON_LANGUAGES.map((code) => (
+          <option key={code} value={code}>
+            {languageName(code)}
+          </option>
+        ))}
+      </select>
+    </Row>
+  );
+}
 
 function Appearance() {
   const [choice, setChoice] = useState<ThemeChoice>(loadThemeChoice);
@@ -114,6 +148,7 @@ function Appearance() {
           }}
         />
       </div>
+      <ContentLanguage />
       <Row title="Reading font" help="Applies to lesson prose. Code stays monospaced.">
         <Segmented
           label="Reading font"
@@ -275,14 +310,11 @@ function Packages() {
       id="packages"
       title="Course packages"
       action={
-        <Button size="sm" aria-expanded={adding} aria-controls="add-package-form" onClick={() => setAdding((a) => !a)} className="!h-7 !px-2.5 !text-xs">
+        <Button variant={adding ? "secondary" : "primary"} aria-expanded={adding} aria-controls="add-package-form" onClick={() => setAdding((a) => !a)}>
           {adding ? "Cancel" : "Add package"}
         </Button>
       }
     >
-      <div className="border-b border-border py-4">
-        <ZipDrop onFile={(file) => setImporting({ kind: "zip", file })} />
-      </div>
       {adding ? <AddPackageForm onCheck={(body) => setImporting({ kind: "repo", body })} /> : null}
       {importing ? (
         <ImportDialog
@@ -302,10 +334,15 @@ function Packages() {
           <PageError what="packages" error={q.error} onRetry={() => void q.refetch()} width={WIDTH} />
         </div>
       ) : q.data.packages.length === 0 ? (
-        <p className="m-0 border-b border-border py-4 text-[13px] text-text3">No course packages yet. Add one by repo URL, path and ref.</p>
+        <p className="m-0 py-4 text-[13px] text-text3">No courses yet. Add one by repo URL, path and ref, or drop a zip below.</p>
       ) : (
-        q.data.packages.map((p) => <PackageRow key={p.id} pkg={p} onRemove={() => setRemoving(p)} onReview={(body) => setImporting({ kind: "repo", body })} />)
+        <div className="flex flex-col gap-3 py-4">
+          {q.data.packages.map((p) => (
+            <PackageRow key={p.id} pkg={p} onRemove={() => setRemoving(p)} onReview={(body) => setImporting({ kind: "repo", body })} />
+          ))}
+        </div>
       )}
+      <ZipDrop onFile={(file) => setImporting({ kind: "zip", file })} />
       {removing ? <RemoveDialog pkg={removing} onClose={() => setRemoving(null)} /> : null}
       <RemovedList />
     </Group>
@@ -324,14 +361,19 @@ function PackageRow({ pkg, onRemove, onReview }: { pkg: PackageInfo; onRemove: (
   const action = versionAction(pkg.ref, updates, picked);
   const others = (names: string[]) => names.filter((n) => n !== pkg.ref);
   return (
-    <div data-hue={pkg.course.hue} className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-border py-3.5">
-      <span className="w-11 font-mono text-sm font-semibold text-hue" title={pkg.course.title}>
+    <div data-hue={pkg.course.hue} className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-card border border-border bg-surface px-4 py-4">
+      <span className="flex h-12 w-12 flex-none items-center justify-center rounded-button bg-hue-bg font-mono text-base font-semibold text-hue-ink" aria-hidden>
         {pkg.course.monogram}
       </span>
-      <span className="min-w-0 flex-[1_1_260px] break-all font-mono text-xs text-text2">
-        {pkg.url}
-        {pkg.path ? `/${pkg.path}` : ""} @ {pkg.ref} · {shortSha(pkg.sha)}
-      </span>
+      <div className="min-w-0 flex-[1_1_240px]">
+        <Link to={`/courses/${pkg.course.id}`} className="text-base font-semibold text-text no-underline hover:underline">
+          {pkg.course.title}
+        </Link>
+        <div className="mt-0.5 break-all font-mono text-xs text-text3">
+          {pkg.url.replace(/^https?:\/\//, "")}
+          {pkg.path ? `/${pkg.path}` : ""} @ {pkg.ref} · {shortSha(pkg.sha)}
+        </div>
+      </div>
       {updates?.status === "update_available" ? (
         <Badge tone="hue" mono={false}>
           Update available
@@ -375,7 +417,7 @@ function PackageRow({ pkg, onRemove, onReview }: { pkg: PackageInfo; onRemove: (
       <Button size="sm" disabled={check.isPending} onClick={() => check.mutate()} aria-label={`Check ${pkg.course.title} for updates`} className="!h-7 !px-2.5 !text-xs">
         {check.isPending ? "Checking…" : "Check for updates"}
       </Button>
-      <Button size="sm" onClick={onRemove} aria-label={`Remove ${pkg.course.title}`} className="!h-7 !px-2.5 !text-xs">
+      <Button size="sm" onClick={onRemove} aria-label={`Remove ${pkg.course.title}`} className="!h-7 !px-2.5 !text-xs !text-bad">
         Remove
       </Button>
       {check.isError ? (
@@ -424,7 +466,7 @@ function RemovedList() {
 }
 
 /** Drop target and file picker for a course zip; the file goes to the import popup, which checks it before anything is added. */
-function ZipDrop({ onFile }: { onFile: (f: File) => void }) {
+export function ZipDrop({ onFile }: { onFile: (f: File) => void }) {
   const [over, setOver] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const pick = useRef<HTMLInputElement>(null);
@@ -463,15 +505,15 @@ function ZipDrop({ onFile }: { onFile: (f: File) => void }) {
         ) : null}
       </span>
       <input ref={pick} type="file" accept=".zip,application/zip" hidden aria-label="Choose a course zip" onChange={(e) => { take(e.target.files); e.target.value = ""; }} />
-      <Button size="sm" onClick={() => pick.current?.click()} className="!h-7 !px-2.5 !text-xs">
+      <Button variant="primary" onClick={() => pick.current?.click()}>
         Choose a file
       </Button>
     </div>
   );
 }
 
-function AddPackageForm({ onCheck }: { onCheck: (body: { url: string; path: string; ref: string }) => void }) {
-  const [form, setForm] = useState<PackageForm>({ url: "", path: "", ref: "main" });
+export function AddPackageForm({ onCheck, initialUrl = "" }: { onCheck: (body: { url: string; path: string; ref: string }) => void; initialUrl?: string }) {
+  const [form, setForm] = useState<PackageForm>({ url: initialUrl, path: "", ref: "main" });
   const [error, setError] = useState<string | null>(null);
   const set = (k: keyof PackageForm) => (e: React.ChangeEvent<HTMLInputElement>) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
@@ -514,11 +556,93 @@ function AddPackageForm({ onCheck }: { onCheck: (body: { url: string; path: stri
   );
 }
 
+// ---------- Danger zone (in-browser build only) ----------
+
+function DangerZone() {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function purge() {
+    setBusy(true);
+    setError(null);
+    try {
+      await purgeLocalData();
+      location.assign("/");
+    } catch {
+      setError("Could not delete the data. Close other Selfschool tabs and try again.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section aria-labelledby="danger-h" className="flex flex-col gap-3">
+      <h2 id="danger-h" className="m-0 text-xl font-semibold tracking-[-0.01em]">
+        Danger zone
+      </h2>
+      <div className="rounded-card border border-bad [&>*+*]:border-t [&>*+*]:border-border">
+        <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 px-4 py-4">
+          <div className="min-w-0 flex-[1_1_260px]">
+            <div className="font-semibold">Delete all data</div>
+            <div className="text-[13px] text-text2">
+              Removes every course, all progress, attempts and settings stored in this browser. Export a backup first: once deleted, there is no going back.
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="inline-flex h-8 cursor-pointer items-center rounded-button border border-border2 bg-surface px-3 text-[13px] font-semibold text-bad hover:bg-surface2"
+          >
+            Delete all data
+          </button>
+        </div>
+      </div>
+      {open ? (
+        <Modal labelId="purge-title" busy={busy} onClose={() => setOpen(false)}>
+          <div className="flex flex-col gap-4 px-6 py-5 text-[13px]">
+            <h2 id="purge-title" className="m-0 text-xl font-semibold leading-[1.25] tracking-[-0.01em]">
+              Delete all data?
+            </h2>
+            <p className="m-0 text-text2">All courses, progress, quiz and exam attempts, the question bank and your settings in this browser will be erased. This cannot be undone.</p>
+            <label className="flex flex-col gap-1.5">
+              <span className="text-text3">
+                Type <code className="font-mono text-text">delete</code> to confirm
+              </span>
+              <input value={typed} onChange={(e) => setTyped(e.target.value)} disabled={busy} autoComplete="off" className="h-9 rounded-control border border-border2 bg-bg px-3 text-text" />
+            </label>
+            {error ? (
+              <p role="alert" className="m-0 text-bad">
+                {error}
+              </p>
+            ) : null}
+            <div className="flex justify-end gap-2">
+              <Button size="sm" onClick={() => setOpen(false)} disabled={busy}>
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={() => void purge()}
+                disabled={busy || typed.trim().toLowerCase() !== "delete"}
+                className="inline-flex h-[30px] cursor-pointer items-center rounded-control bg-bad px-3 text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? "Deleting…" : "Delete everything"}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+    </section>
+  );
+}
+
 // ---------- Data ----------
 
 function Data() {
   const q = useSettings();
   const [last, setLast] = useState(loadLastBackup);
+  const [exporting, setExporting] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   return (
     <Group title="Data">
       <Row
@@ -540,6 +664,26 @@ function Data() {
           </a>
         </div>
       </Row>
+      <Row title="Portable backup" help="One JSON file with your progress, settings and where each course came from. Restore it on another device or address, and the courses are fetched again.">
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            disabled={exporting}
+            onClick={() => {
+              setExporting(true);
+              void downloadPortableBackup()
+                .then(() => setLast(loadLastBackup()))
+                .finally(() => setExporting(false));
+            }}
+          >
+            {exporting ? "Exporting…" : "Export (.json)"}
+          </Button>
+          <Button size="sm" onClick={() => setRestoring(true)}>
+            Restore…
+          </Button>
+        </div>
+      </Row>
+      {restoring ? <RestoreDialog onClose={() => setRestoring(false)} /> : null}
     </Group>
   );
 }

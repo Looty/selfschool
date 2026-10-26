@@ -9,6 +9,7 @@ import {
   activeDays, barHeights, continueLabel, dateLabel, formatMinutes, heatColor, heatmapWeeks, plural, ringDash, weakSpotTone,
 } from "./logic";
 import { Icon, PageError, PageLoading } from "./shared";
+import { Welcome } from "./Welcome";
 
 export default function DashboardFeature() {
   const q = useDashboard();
@@ -20,6 +21,7 @@ export default function DashboardFeature() {
 }
 
 export function DashboardView({ data, paused, now = new Date() }: { data: Dashboard; paused: boolean; now?: Date }) {
+  if (data.courses.length === 0) return <Welcome />;
   const hue = data.continue?.course.hue ?? data.courses.find((c) => c.started)?.hue ?? "blue";
   return (
     <div className="mx-auto flex max-w-[1180px] flex-col gap-7 px-7 pb-14 pt-7">

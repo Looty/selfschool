@@ -210,6 +210,25 @@ Run `school validate courses/<id>` and fix every error until it exits clean. Wit
 
 Two sentences: what was built (chapters, lessons, quizzes, exams) and the absolute path of the folder (and zip, if made), then anything skipped, weakly sourced or flagged low-confidence. No recap of the process.
 
+## Translating a course
+
+Same course, another language: the translation lives inside the package under `i18n/<language>/` (`he`, `pt-BR`, ...), mirroring the chapter folders. Ids never change, so progress carries over between languages. The course's own language is `language:` in `course.yaml` (default `en`).
+
+```
+i18n/he/course.yaml            title, short_intro, description, chapters: {<dir>: title}, lessons: {<lesson id>: title}
+i18n/he/01-basics/lesson-01.md same frontmatter (id, quiz, resources, sources), translated title and body
+i18n/he/01-basics/quiz-01.yaml the quiz with every text translated
+```
+
+Translate with these rules (the validator reports breaches as `translation:` warnings, and the app ignores a translated file that breaks them, falling back to the original):
+
+- Translate text only. Keep every `id`, file name, key, number, `correct` flag and the **order of options, items, pairs and steps** exactly. Multiple-choice answers are graded by position, so a reordered option marks the right answer wrong.
+- Keep code, shell commands, URLs, citation numbers `[3]`, relative links (write them as in the original lesson, not relative to `i18n/`) and the `:::` block names unchanged. Translate comments only when they teach something.
+- A lesson's frontmatter `title` must equal its entry in `i18n/<language>/course.yaml` `lessons:`.
+- `short` answers: list the accepted spellings in the new language; the original ones are accepted too.
+- Files you do not translate fall back to the original, so a partial translation is fine. Exams are not translated yet.
+- Check with `school validate <course folder>` and read the `translation:` warnings.
+
 ## Extending an existing course
 
 Use this mode when the user wants more chapters for a course that already exists, whether they wrote it or pulled it from someone else. Never edit `courses/<id>/`: new chapters go into `extensions/<id>/`, which the app merges after the core chapters as level 2. A package update from its author then cannot overwrite them.

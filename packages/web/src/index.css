@@ -255,6 +255,9 @@ body {
 :root[data-content-width="narrow"] { --content-scale: 0.98; }
 :root[data-content-width="wide"] { --content-scale: 1.6; }
 
+/* Right-to-left course text (a Hebrew or Arabic translation): code, diffs and math stay left-to-right and left-aligned. */
+[dir="rtl"] pre, [dir="rtl"] code, [dir="rtl"] .code-block { direction: ltr; text-align: left; unicode-bidi: isolate; }
+
 /* "Saved" toast (src/ui/Toast.tsx): slides up and fades in; skipped for people who ask for less motion. */
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 .toast-in { animation: toast-in 160ms ease-out; }
