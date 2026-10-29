@@ -83,6 +83,56 @@ describe("answers", () => {
     expect(after.score.pendingCount).toBe(0);
   });
 
+  it("lets the learner self-mark a pending open answer against the rubric, and an AI grade replaces it", async () => {
+    const h = setup();
+    const id = await start(h);
+    await h.post(`/attempts/${id}/answers/mini:a-mcq`, { type: "mcq", selected: [1] });
+    await h.post(`/attempts/${id}/answers/mini:a-short`, { type: "short", text: "object" });
+    const sub = await h.post(`/attempts/${id}/answers/mini:a-open`, { type: "open", text: "Shape-based." });
+    expect(sub.json).toMatchObject({ state: "grading", rubric: expect.stringContaining("Mentions shape") });
+
+    const self = await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "partly" });
+    expect(self.status).toBe(200);
+    expect(self.json).toMatchObject({ state: "self", selfMark: "partly", marks: { got: 0.5, max: 1 }, correct: false, rubric: expect.any(String) });
+    // the mark can be changed while it is still the learner's own
+    expect((await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "got" })).json).toMatchObject({ state: "self", selfMark: "got" });
+
+    // nothing pending: the quiz is scored and passed now, and clears the lesson
+    const fin = (await h.post(`/attempts/${id}/finish`)).json;
+    expect(fin).toMatchObject({ provisional: false, passed: true, score: { percent: 100, pendingCount: 0 } });
+    expect((await h.get("/courses/mini/lessons/a1")).json.completed).toBe(true);
+
+    // the grade job is still queued; the AI grade replaces the self-mark and the score follows it
+    const ran = await h.runner(() => ({ score: 0, correct: false, feedback: "Misses the point." }));
+    expect(ran?.outcome.status).toBe("done");
+    const after = (await h.get(`/attempts/${id}`)).json;
+    expect(after.answers[2]).toMatchObject({ state: "graded", marks: { got: 0, max: 1 } });
+    expect(after.answers[2].rubric).toBeUndefined();
+    expect(after.score.percent).toBe(66.7);
+    // once AI-graded it is no longer the learner's to mark
+    expect((await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "got" })).status).toBe(409);
+  });
+
+  it("refuses self-marks for other question types and before the answer is in", async () => {
+    const h = setup();
+    const id = await start(h);
+    expect((await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "got" })).status).toBe(409);
+    await h.post(`/attempts/${id}/answers/mini:a-mcq`, { type: "mcq", selected: [0] });
+    expect((await h.post(`/attempts/${id}/answers/mini:a-mcq/self-mark`, { mark: "got" })).status).toBe(400);
+    expect((await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "maybe" })).status).toBe(400);
+  });
+
+  it("gives no XP for a self-mark, so the AI grade can still award it", async () => {
+    const h = setup();
+    const id = await start(h);
+    await h.post(`/attempts/${id}/answers/mini:a-open`, { type: "open", text: "x" });
+    await h.post(`/attempts/${id}/answers/mini:a-open/self-mark`, { mark: "got" });
+    const xp = () => (h.db.$client.prepare("SELECT reason FROM xp_event WHERE ref = ?").all(`${id}:mini:a-open`) as unknown[]).length;
+    expect(xp()).toBe(0);
+    await h.runner(() => ({ score: 1, correct: true, feedback: "Good." }));
+    expect(xp()).toBe(1);
+  });
+
   it("lets a failed grade be re-submitted", async () => {
     const h = setup();
     const id = await start(h);

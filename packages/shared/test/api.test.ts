@@ -36,7 +36,7 @@ describe("route table", () => {
     expect(routeNames()).toEqual(
       expect.arrayContaining([
         "dashboard", "courses", "course", "lesson", "completeLesson", "quiz", "startQuizAttempt",
-        "submitAnswer", "finishAttempt", "attempt", "exam", "startExam", "regenerateExam",
+        "submitAnswer", "selfMarkAnswer", "finishAttempt", "attempt", "exam", "startExam", "regenerateExam",
         "examInstance", "reportQuestion", "chat", "ask", "job", "settings", "updateSettings", "packages",
       ]),
     );

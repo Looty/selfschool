@@ -8,6 +8,8 @@ const apiTarget = process.env.API_PROXY_TARGET ?? "http://127.0.0.1:3001";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  // the in-browser code runner's workers are ES modules (the Python one imports Pyodide from the CDN)
+  worker: { format: "es" },
   resolve: {
     // Use shared's TypeScript source directly (no dist build needed for dev, tests or bundling).
     alias: [{ find: /^@selfschool\/shared$/, replacement: fileURLToPath(new URL("../shared/src/index.ts", import.meta.url)) }],

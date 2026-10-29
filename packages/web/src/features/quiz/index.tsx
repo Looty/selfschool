@@ -1,7 +1,8 @@
 import { useEffect, useReducer, useState } from "react";
 import type { AttemptResult, LearnerQuiz } from "@selfschool/shared";
 import { Link, useParams } from "react-router-dom";
-import { useApiQuery, useAttempt, useFinishAttempt, useLesson, useQuiz, useStartQuizAttempt, useSubmitAnswer } from "../../api/hooks";
+import type { SelfMark } from "@selfschool/shared";
+import { useApiQuery, useAttempt, useFinishAttempt, useLesson, useQuiz, useSelfMarkAnswer, useStartQuizAttempt, useSubmitAnswer } from "../../api/hooks";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseBand } from "../../ui";
 import { ErrorPage, LoadingPage, Narrow, Notice, Page, errorMessage } from "./PageState";
@@ -32,6 +33,7 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
   const health = useApiQuery("health", undefined);
   const start = useStartQuizAttempt();
   const submit = useSubmitAnswer();
+  const selfMark = useSelfMarkAnswer();
   const finish = useFinishAttempt();
   const attempt = useAttempt(attemptId);
 
@@ -53,6 +55,16 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
         setAttemptId(id);
       }
       const result = await submit.mutateAsync({ params: { attemptId: id, questionId: q.id }, body: input });
+      dispatch({ type: "checked", qid: q.id, result });
+    } catch (e) {
+      dispatch({ type: "failed", message: errorMessage(e) });
+    }
+  }
+
+  async function markSelf(mark: SelfMark) {
+    if (!attemptId || selfMark.isPending) return;
+    try {
+      const result = await selfMark.mutateAsync({ params: { attemptId, questionId: q.id }, body: { mark } });
       dispatch({ type: "checked", qid: q.id, result });
     } catch (e) {
       dispatch({ type: "failed", message: errorMessage(e) });
@@ -152,6 +164,8 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
           lessonId={quiz.lesson.id}
           aiPaused={aiPaused}
           finishing={finish.isPending}
+          onSelfMark={(m) => void markSelf(m)}
+          selfMarking={selfMark.isPending}
           onDraft={(draft) => dispatch({ type: "draft", qid: q.id, draft })}
           onCheck={() => void check()}
           onNext={() => dispatch({ type: "next", total })}

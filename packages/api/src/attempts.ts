@@ -8,6 +8,7 @@ import type {
   LearnerQuestion,
   LessonRef,
   Question,
+  SelfMark,
 } from "@selfschool/shared";
 import { questionKey, type LoadedCourse } from "./catalog.js";
 import { completeLesson } from "./courses.js";
@@ -265,10 +266,39 @@ export function answerView(a: AttemptData, snap: SnapQ, ans: AnswerRow | undefin
     return { ...base, state: "scored", correct: ans.correct, marks, feedback: null, hotspot: { regions, points } };
   }
   const answerText = input.type === "open" ? input.text : "";
+  // the rubric is an answer key: only once revealed, and only while no AI grade has replaced it
+  const rubric = q.type === "open" ? { rubric: q.rubric } : {};
+  if (ans.grader === "self" && ans.marks !== null) {
+    return { ...base, state: "self", correct: ans.correct, marks, answerText, ...rubric, selfMark: selfMarkOf(ans.marks), feedback: null };
+  }
   if (ans.marks !== null) {
     return { ...base, state: "graded", correct: ans.correct, marks, answerText, feedback: { marks: { got: ans.marks, max: 1 }, points: parsePoints(ans.feedback) } };
   }
-  return { ...base, state: failed ? "failed" : "grading", correct: null, marks: null, answerText, feedback: null };
+  return { ...base, state: failed ? "failed" : "grading", correct: null, marks: null, answerText, ...rubric, feedback: null };
+}
+
+const SELF_MARKS: Record<SelfMark, number> = { got: 1, partly: 0.5, missed: 0 };
+const selfMarkOf = (marks: number): SelfMark => (marks >= 1 ? "got" : marks > 0 ? "partly" : "missed");
+
+/**
+ * The learner marks an open answer against its rubric while AI grading is unavailable, so the quiz can be scored
+ * and passed now. The grade job stays queued: when the runner grades it, applyGradeResult replaces this mark.
+ * No XP here: answer XP is keyed per answer, so a self-mark award would block the AI grade's award.
+ */
+export function selfMarkAnswer(ctx: Ctx, attemptId: string, questionId: string, mark: SelfMark, lang?: string): AnswerResult {
+  const a = loadAttempt(ctx, attemptId, lang);
+  const snap = a.questions.find((s) => s.id === questionId);
+  if (!snap) throw new HttpError(404, "question is not part of this attempt");
+  if (snap.q.type !== "open") throw new HttpError(400, "only open answers are marked by the learner");
+  if (a.kind !== "quiz" || !a.showAnswers) throw new HttpError(409, "this quiz does not show answers, so it cannot be self-marked");
+  const ans = a.answers.get(questionId);
+  if (!ans) throw new HttpError(409, "submit the answer first");
+  if (ans.marks !== null && ans.grader !== "self") throw new HttpError(409, "this answer is already graded");
+  const marks = SELF_MARKS[mark];
+  ctx.db.update(attemptAnswers).set({ marks, correct: marks === 1, grader: "self" }).where(eq(attemptAnswers.id, ans.id)).run();
+  settleAttempt(ctx, attemptId);
+  const fresh = loadAttempt(ctx, attemptId, lang);
+  return answerView(fresh, snap, fresh.answers.get(questionId))!;
 }
 
 function domainLesson(a: AttemptData, s: SnapQ): LessonRef | null {
@@ -587,7 +617,8 @@ export function applyGradeResult(ctx: Ctx, jobId: string, result: { score: numbe
   const row = ctx.db.select().from(attemptAnswers).where(eq(attemptAnswers.jobId, jobId)).get();
   if (!row) return;
   const points = JSON.stringify([{ ok: result.correct, text: result.feedback }]);
-  ctx.db.update(attemptAnswers).set({ marks: result.score, correct: result.correct, feedback: points }).where(eq(attemptAnswers.id, row.id)).run();
+  // grader back to "ai": the AI grade replaces a self-mark made while the runner was off
+  ctx.db.update(attemptAnswers).set({ marks: result.score, correct: result.correct, feedback: points, grader: "ai" }).where(eq(attemptAnswers.id, row.id)).run();
   if (result.correct) awardXp(ctx, 5, "answer_correct", `${row.attemptId}:${row.questionId}`);
   settleAttempt(ctx, row.attemptId);
 }

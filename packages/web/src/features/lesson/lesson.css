@@ -115,13 +115,12 @@ sup.cite a:hover { text-decoration: underline; }
   text-decoration: none;
   white-space: normal;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  opacity: 0;
-  visibility: hidden;
   pointer-events: none;
-  transition: opacity 120ms ease-out;
+  /* out of the layout while hidden: a hidden tooltip near the right edge would otherwise widen the page sideways */
+  display: none;
 }
 .lesson-article abbr.gloss:hover::after,
-.lesson-article abbr.gloss:focus-visible::after { opacity: 1; visibility: visible; }
+.lesson-article abbr.gloss:focus-visible::after { display: block; }
 .lesson-unused-terms { background: var(--surface); }
 
 /* Settings > Text size: --prose-scale is (chosen size / 17px). The lesson text, headings, intro and callouts scale together. */

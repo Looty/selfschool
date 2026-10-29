@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { CourseRemoval, PackageInfo } from "@selfschool/shared";
 import { ApiError, getRemoval, removeCourse } from "../../api/client";
+import { apiHref } from "../../basePath";
 import { Button } from "../../ui";
 import { markBackupDone } from "./backup";
 import { Modal } from "./Modal";
@@ -94,7 +95,7 @@ export function RemoveDialog({ pkg, onClose }: { pkg: PackageInfo; onClose: () =
             <p className="m-0 text-text2">No files are touched: the course folder stays where it is, so you can import it again or restore it from the Removed list.</p>
             <p className="m-0 text-text2">
               Want a copy of your progress first?{" "}
-              <a href="/api/backup" download onClick={() => markBackupDone()} className="text-text underline">
+              <a href={apiHref("/api/backup", import.meta.env.BASE_URL)} download onClick={() => markBackupDone()} className="text-text underline">
                 Export backup
               </a>
               . It saves the whole progress database.

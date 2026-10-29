@@ -33,6 +33,7 @@ const INPUTS: Record<RouteName, Record<string, unknown>> = {
   attempt: { params: { attemptId: "att-mid-2" } },
   deleteAttempt: { params: { attemptId: "att-mid-1" } },
   submitAnswer: { params: { attemptId: "att-mid-2", questionId: "x01" }, body: { type: "mcq", selected: [0] } },
+  selfMarkAnswer: { params: { attemptId: "att-mid-2", questionId: "q06-3" }, body: { mark: "partly" } },
   finishAttempt: { params: { attemptId: "att-mid-2" } },
   reportQuestion: { params: { questionId: "x07" }, body: {} },
   settings: {},
@@ -79,6 +80,12 @@ describe("mock layer", () => {
         // attempt 2 is finished; use a fresh quiz attempt instead
         const a = (await call("startQuizAttempt", INPUTS.startQuizAttempt)) as { attemptId: string };
         input.params = { attemptId: a.attemptId, questionId: "q06-1" };
+      }
+      if (name === "selfMarkAnswer") {
+        // a quiz (answers shown) with an open answer waiting for AI
+        const a = (await call("startQuizAttempt", INPUTS.startQuizAttempt)) as { attemptId: string };
+        await call("submitAnswer", { params: { attemptId: a.attemptId, questionId: "q06-3" }, body: { type: "open", text: "shapes" } });
+        input.params = { attemptId: a.attemptId, questionId: "q06-3" };
       }
       if (name === "finishAttempt") {
         const a = (await call("startQuizAttempt", INPUTS.startQuizAttempt)) as { attemptId: string };

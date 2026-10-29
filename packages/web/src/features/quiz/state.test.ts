@@ -83,6 +83,13 @@ describe("merging local and polled results", () => {
     expect(mergeResult(undefined, grading)).toBe(grading);
     expect(mergeResult(grading, undefined)).toBe(grading);
   });
+
+  it("a self-mark beats a stale polled grading; an AI grade beats the self-mark", () => {
+    const self = result({ type: "open", state: "self", selfMark: "got", correct: true, marks: { got: 1, max: 1 } });
+    expect(mergeResult(self, grading)).toBe(self);
+    expect(mergeResult(grading, self)).toBe(self);
+    expect(mergeResult(self, graded)).toBe(graded);
+  });
 });
 
 describe("scoring display", () => {
@@ -98,6 +105,9 @@ describe("scoring display", () => {
     expect(answerPill(result({ state: "recorded", correct: null, marks: null }))).toMatchObject({ tone: "neutral", label: "Answer recorded" });
     expect(answerPill(result({ state: "grading", correct: null, marks: null }))).toMatchObject({ tone: "warn", label: "Grading…" });
     expect(answerPill(result({ state: "failed", correct: null, marks: null }))).toMatchObject({ tone: "bad" });
+    expect(answerPill(result({ state: "self", selfMark: "got" }))).toMatchObject({ tone: "ok", label: "Self-marked · got it" });
+    expect(answerPill(result({ state: "self", selfMark: "partly" }))).toMatchObject({ tone: "warn", label: "Self-marked · partly" });
+    expect(answerPill(result({ state: "self", selfMark: "missed" }))).toMatchObject({ tone: "bad", label: "Self-marked · missed" });
   });
 
   it("graded tone follows the share of points", () => {

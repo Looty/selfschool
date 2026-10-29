@@ -19,9 +19,12 @@ export function AskBar({
   error,
   inputRef,
   initiallyOpen = false,
+  pinned = true,
 }: {
   /** Starts expanded (tests); the app starts collapsed. */
   initiallyOpen?: boolean;
+  /** Sticks to the bottom itself; false when a parent pins it (the lesson's bottom stack, with the lab's terminal). */
+  pinned?: boolean;
   aiAvailable: boolean;
   answerCount: number;
   value: string;
@@ -60,9 +63,10 @@ export function AskBar({
     }
   };
 
+  const pin = pinned ? "sticky bottom-0 z-20 " : "";
   if (!expanded) {
     return (
-      <div className="sticky bottom-0 z-20 border-t border-border2 bg-bg" style={{ boxShadow: "0 -8px 24px rgba(11, 18, 32, 0.06)" }}>
+      <div className={`${pin}border-t border-border2 bg-bg`} style={{ boxShadow: "0 -8px 24px rgba(11, 18, 32, 0.06)" }}>
         <div className="mx-auto box-border flex max-w-[calc(940px*var(--content-scale,1))] items-center gap-2 px-7 py-1">
           <button
             type="button"
@@ -91,7 +95,7 @@ export function AskBar({
   return (
     <div
       ref={root}
-      className="sticky bottom-0 z-20 border-t border-border2 bg-bg"
+      className={`${pin}border-t border-border2 bg-bg`}
       style={{ boxShadow: "0 -8px 24px rgba(11, 18, 32, 0.06)" }}
       onBlur={(e) => {
         // auto-hide when focus leaves an unused box

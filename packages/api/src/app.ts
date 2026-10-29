@@ -21,6 +21,7 @@ import {
   deleteAttempt,
   startQuizAttempt,
   submitAnswer,
+  selfMarkAnswer,
   applyGradeResult,
 } from "./attempts.js";
 import { Catalog } from "./catalog.js";
@@ -105,6 +106,8 @@ type Parsed<T> = T extends { parse(x: unknown): infer O } ? O : never;
 /** `lang`: the reader's language from the `x-selfschool-lang` header (see i18n.ts); undefined = the course's own. */
 type Input<N extends RouteName> = { params: Parsed<Routes[N]["params"]>; body: Parsed<Routes[N]["body"]>; lang: string | undefined };
 
+const CODE_DESTINATIONS = new Set(["script", "json", "style", "worker", "sharedworker", "serviceworker", "audioworklet", "paintworklet"]);
+
 export function createApp(db: Db, opts: AppOptions = {}) {
   const maxWaitMs = opts.maxWaitMs ?? 30_000;
   const pollIntervalMs = opts.pollIntervalMs ?? 250;
@@ -148,6 +151,15 @@ export function createApp(db: Db, opts: AppOptions = {}) {
   };
 
   const app = new Hono();
+
+  // The web app calls the api with fetch, <img> and downloads, never as a script, module or style. The browser marks
+  // those loads (Sec-Fetch-Dest, which page code cannot set), so a request of that kind comes from code in the
+  // in-browser code runner (an `import()` of the api's JSON) and is refused.
+  app.use("*", async (c, next) => {
+    const dest = c.req.header("sec-fetch-dest");
+    if (dest && CODE_DESTINATIONS.has(dest)) return c.json({ error: "not available to scripts" }, 403);
+    await next();
+  });
 
   app.onError((err, c) => {
     if (err instanceof HttpError) return c.json({ error: err.message }, err.status);
@@ -278,6 +290,7 @@ export function createApp(db: Db, opts: AppOptions = {}) {
   route("attempt", ({ params, lang }) => buildAttemptResult(ctx, params.attemptId, lang));
   route("deleteAttempt", ({ params }) => deleteAttempt(ctx, params.attemptId));
   route("submitAnswer", ({ params, body, lang }) => submitAnswer(ctx, params.attemptId, params.questionId, body, lang));
+  route("selfMarkAnswer", ({ params, body, lang }) => selfMarkAnswer(ctx, params.attemptId, params.questionId, body.mark, lang));
   route("finishAttempt", ({ params, lang }) => finishAttempt(ctx, params.attemptId, lang));
   route("reportQuestion", ({ params, body }) => {
     reportQuestion(ctx, params.questionId, body.reason);

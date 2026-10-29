@@ -7,15 +7,26 @@ self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
 // covers it, and on GitHub Pages the scope is /selfschool/). Keep in step with src/apiPath.ts.
 const scopedApi = `${new URL(self.registration.scope).pathname}api/`;
 
+// The app loads /api/ only with fetch, <img> and downloads, never as a script, module or style. A request for one of
+// those comes from code in the in-browser code runner (an `import()` of the app's JSON), so it is refused.
+const CODE_DESTINATIONS = new Set(["script", "json", "style", "worker", "sharedworker", "serviceworker", "audioworklet", "paintworklet"]);
+
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   const api = url.pathname.startsWith("/api/") || url.pathname.startsWith(scopedApi);
   if (url.origin !== self.location.origin || !api || event.request.method !== "GET") return;
+  if (CODE_DESTINATIONS.has(event.request.destination)) {
+    event.respondWith(new Response("not available to scripts", { status: 403 }));
+    return;
+  }
   event.respondWith(answer(event));
 });
 
 async function answer(event) {
-  const client = (event.clientId && (await self.clients.get(event.clientId))) || (await self.clients.matchAll({ type: "window" }))[0];
+  const from = event.clientId ? await self.clients.get(event.clientId) : undefined;
+  // only a page answers: a worker (the code runner) asking for /api/ gets nothing
+  if (from && from.type !== "window") return new Response("not available to workers", { status: 403 });
+  const client = from || (await self.clients.matchAll({ type: "window" }))[0];
   if (!client) return new Response("no open Selfschool page to answer this request", { status: 503 });
   return new Promise((resolve) => {
     const channel = new MessageChannel();

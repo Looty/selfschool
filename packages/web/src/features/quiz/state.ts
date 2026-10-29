@@ -112,7 +112,8 @@ export function stageOf(s: RunnerState, qid: string): Stage {
   return s.results[qid] ? "answered" : s.checking ? "checking" : "answering";
 }
 
-const RANK: Record<AnswerResult["state"], number> = { grading: 1, failed: 2, recorded: 3, scored: 3, graded: 3 };
+// a self-mark beats a stale "grading" from the poll, and an AI grade beats the self-mark
+const RANK: Record<AnswerResult["state"], number> = { grading: 1, failed: 2, self: 2, recorded: 3, scored: 3, graded: 3 };
 
 /** The polled attempt knows a graded answer before the local copy does; never go back from graded to grading. */
 export function mergeResult(local: AnswerResult | undefined, remote: AnswerResult | undefined): AnswerResult | undefined {
@@ -143,6 +144,12 @@ export function answerPill(r: AnswerResult | undefined): Pill | null {
       return { tone: "bad", label: "Grading failed", mono: false };
     case "recorded":
       return { tone: "neutral", label: "Answer recorded", mono: false };
+    case "self":
+      return r.selfMark === "got"
+        ? { tone: "ok", label: "Self-marked · got it", mono: false }
+        : r.selfMark === "partly"
+          ? { tone: "warn", label: "Self-marked · partly", mono: false }
+          : { tone: "bad", label: "Self-marked · missed", mono: false };
     case "graded": {
       const m = r.feedback?.marks ?? r.marks;
       if (!m) return { tone: "neutral", label: "Graded", mono: false };
@@ -163,4 +170,11 @@ export function announcement(r: AnswerResult | undefined): string {
   return p.mono ? `Graded: ${p.label.toLowerCase()}` : p.label;
 }
 
-export const isFinished = (r: AnswerResult | undefined) => !!r && r.state !== "grading";
+/** An open answer the learner can mark against the rubric: AI is paused, its grade failed, or it is already self-marked. */
+export const canSelfCheck = (r: AnswerResult | undefined, aiPaused: boolean): boolean =>
+  !!r?.rubric && ((r.state === "grading" && aiPaused) || r.state === "failed" || r.state === "self");
+
+/** The pill while an answer waits for the learner's own mark (nothing is grading it). */
+export const AWAITING_SELF_MARK: Pill = { tone: "warn", label: "Mark it yourself", mono: false };
+
+export const isFinished =(r: AnswerResult | undefined) => !!r && r.state !== "grading";

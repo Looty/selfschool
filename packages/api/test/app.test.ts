@@ -33,6 +33,20 @@ describe("GET /health", () => {
   });
 });
 
+describe("requests made as script or module loads", () => {
+  // the in-browser code runner could `import()` the api's JSON; the app itself never loads it that way
+  it("are refused, while the app's own fetch, image and download requests pass", async () => {
+    for (const dest of ["script", "json", "style", "worker"]) {
+      const res = await app.request("/settings", { headers: { "sec-fetch-dest": dest } });
+      expect(res.status, dest).toBe(403);
+    }
+    for (const dest of ["empty", "image", "document"]) {
+      expect((await app.request("/health", { headers: { "sec-fetch-dest": dest } })).status, dest).toBe(200);
+    }
+    expect((await app.request("/health")).status).toBe(200);
+  });
+});
+
 describe("jobs queue", () => {
   it("returns 204 when empty", async () => {
     expect((await app.request("/jobs/next")).status).toBe(204);
