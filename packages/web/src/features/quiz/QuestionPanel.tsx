@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { AnswerResult, LearnerQuestion } from "@selfschool/shared";
+import type { AnswerResult, LearnerQuestion, SelfMark } from "@selfschool/shared";
 import { Link } from "react-router-dom";
 import { Button, cx } from "../../ui";
 import { AnswerInputs } from "./AnswerInputs";
@@ -11,7 +11,7 @@ import { SortReview } from "./SortInput";
 import { SpotReview } from "./SpotInput";
 import { ChatIcon, CheckCircle, InfoIcon, XCircle } from "./icons";
 import { CodeBlock, Inline, StatusPill, monoLabel } from "./inline";
-import { announcement, answerPill, isMultiple, selectOption, toInput, typeLabel, type Draft, type Stage } from "./state";
+import { AWAITING_SELF_MARK, announcement, answerPill, canSelfCheck, isMultiple, selectOption, toInput, typeLabel, type Draft, type Stage } from "./state";
 
 export interface QuestionPanelProps {
   index: number;
@@ -24,9 +24,12 @@ export interface QuestionPanelProps {
   courseId: string;
   /** Lesson the quiz belongs to ("Ask about this" goes there). */
   lessonId: string;
-  /** Runner is down: open answers are saved and graded later. */
+  /** Runner is down: open answers are saved and graded later; meanwhile the learner can mark them against the rubric. */
   aiPaused: boolean;
   finishing: boolean;
+  /** Marks an open answer against its rubric (only offered while AI cannot grade it). */
+  onSelfMark?: (mark: SelfMark) => void;
+  selfMarking?: boolean;
   onDraft: (d: Draft) => void;
   onCheck: () => void;
   onNext: () => void;
@@ -38,7 +41,8 @@ export function QuestionPanel(p: QuestionPanelProps) {
   const { question: q, result, stage } = p;
   const isLast = p.index === p.total - 1;
   const answered = stage === "answered";
-  const pill = answerPill(result);
+  const selfCheck = !!p.onSelfMark && canSelfCheck(result, p.aiPaused);
+  const pill = selfCheck && result?.state === "grading" ? AWAITING_SELF_MARK : answerPill(result);
   const input = toInput(q, p.draft);
   const rootRef = useRef<HTMLElement>(null);
   const headingId = `q-${q.id}-text`;
@@ -86,7 +90,11 @@ export function QuestionPanel(p: QuestionPanelProps) {
   };
 
   const askHref = `/courses/${p.courseId}/lessons/${p.lessonId}?ask=${encodeURIComponent(q.text)}`;
-  const showAsk = result?.state === "graded" || result?.state === "failed" || (result?.state === "scored" && result.correct === false);
+  const showAsk =
+    result?.state === "graded" ||
+    result?.state === "failed" ||
+    (result?.state === "self" && result.selfMark !== "got") ||
+    (result?.state === "scored" && result.correct === false);
 
   return (
     <section ref={rootRef} aria-labelledby={headingId} className="flex flex-col gap-3.5 rounded-card border border-border p-5">
@@ -97,7 +105,7 @@ export function QuestionPanel(p: QuestionPanelProps) {
         {/* always mounted so the change is announced */}
         <span role="status" aria-live="polite" className="min-h-[22px]">
           {pill ? <StatusPill pill={pill} /> : null}
-          <span className="sr-only">{announcement(result)}</span>
+          <span className="sr-only">{pill === AWAITING_SELF_MARK ? "Answer saved. Check it against the rubric and mark it yourself." : announcement(result)}</span>
         </span>
       </div>
 
@@ -112,7 +120,7 @@ export function QuestionPanel(p: QuestionPanelProps) {
         <div className="flex items-start gap-2 rounded-lg bg-warn-bg px-3 py-2.5 text-[13px] text-warn" role="note">
           <InfoIcon />
           <span>
-            <Inline text="AI is paused. Your answer is saved and graded later, when you start the runner with `school up`." />
+            <Inline text="AI is paused. After you submit, check your answer against the rubric and mark it yourself; AI grades it later and replaces your mark, when you start the runner with `school up`." />
           </span>
         </div>
       ) : null}
@@ -193,12 +201,14 @@ function renderBody(p: QuestionPanelProps) {
     );
   }
 
-  // open-ended
+  // open-ended: while AI cannot grade it (paused, or the grade failed) the learner marks it against the rubric
   const text = result.answerText ?? p.draft.text;
+  const selfCheck = !!p.onSelfMark && canSelfCheck(result, p.aiPaused);
   return (
     <div className="flex flex-col gap-3.5">
       <AnswerBox text={text} />
-      {result.state === "grading" ? <Grading /> : null}
+      {result.state === "grading" && !selfCheck ? <Grading /> : null}
+      {selfCheck ? <SelfCheck rubric={result.rubric!} current={result.selfMark} busy={!!p.selfMarking} onMark={p.onSelfMark!} /> : null}
       {result.state === "graded" && result.feedback ? <Feedback result={result} courseId={p.courseId} /> : null}
       {result.state === "failed" ? <p className="m-0 text-[13px] text-bad">Grading failed for this answer. Submit it again from the next attempt, or ask about it.</p> : null}
     </div>
@@ -222,6 +232,47 @@ function Grading() {
       </div>
       <div className="text-xs text-text3">Queued for the runner. You can leave this page; the result appears here and on the dashboard.</div>
     </>
+  );
+}
+
+const SELF_MARKS: { mark: SelfMark; label: string }[] = [
+  { mark: "got", label: "Got it" },
+  { mark: "partly", label: "Partly" },
+  { mark: "missed", label: "Missed it" },
+];
+
+/** The rubric and three buttons: the learner's own mark counts now; an AI grade replaces it once the runner is on. */
+function SelfCheck({ rubric, current, busy, onMark }: { rubric: string; current: SelfMark | undefined; busy: boolean; onMark: (m: SelfMark) => void }) {
+  return (
+    <div className="overflow-hidden rounded-[10px] border border-border">
+      <div className="flex flex-wrap justify-between gap-x-3 border-b border-border bg-surface px-3.5 py-2.5 text-[13px]">
+        <span className="font-medium">Check it yourself</span>
+        <span className="text-text2">Rubric from the course</span>
+      </div>
+      <div className="flex flex-col gap-3 px-3.5 py-3 text-[13px]">
+        {/* rubrics are often a short "- point" list written as a YAML block: keep its lines */}
+        <div className="whitespace-pre-line text-text2">
+          <Inline text={rubric.trim()} />
+        </div>
+        <fieldset className="m-0 flex min-w-0 flex-wrap items-center gap-2 border-0 p-0">
+          <legend className="sr-only">Mark your answer</legend>
+          <span className="mr-1 font-medium">{current ? "Your mark:" : "How did you do?"}</span>
+          {SELF_MARKS.map(({ mark, label }) => (
+            <Button
+              key={mark}
+              size="sm"
+              aria-pressed={current === mark}
+              disabled={busy}
+              onClick={() => onMark(mark)}
+              className={cx(current === mark && "border-text! bg-surface2!")}
+            >
+              {label}
+            </Button>
+          ))}
+        </fieldset>
+        <p className="m-0 text-xs text-text3">Your mark counts now. When the runner is on, AI grades this answer and replaces it.</p>
+      </div>
+    </div>
   );
 }
 

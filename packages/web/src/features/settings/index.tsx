@@ -6,6 +6,7 @@ import { getPackageUpdates, getRemoved, restoreCourse } from "../../api/client";
 import { usePackages, useSettings, useUpdateSettings } from "../../api/hooks";
 import { COMMON_LANGUAGES, languageName, loadContentLanguage, readingLanguage, saveContentLanguage } from "../../api/language";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
+import { apiHref } from "../../basePath";
 import { LOCAL, describeLastBackup, loadLastBackup, markBackupDone } from "./backup";
 import { ImportDialog, type ImportSource } from "./ImportDialog";
 import { Modal } from "./Modal";
@@ -665,7 +666,7 @@ function Data() {
         <div className="flex items-center gap-3">
           <span className="font-mono text-xs text-text3">{q.data ? formatBytes(q.data.database.sizeBytes) : q.isError ? "unavailable" : "…"}</span>
           <a
-            href="/api/backup"
+            href={apiHref("/api/backup", import.meta.env.BASE_URL)}
             download
             onClick={() => {
               markBackupDone();

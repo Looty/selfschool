@@ -6,6 +6,7 @@ import type {
   ExtensionSeed,
   LearnerQuestion,
   OutlineResult,
+  SelfMark,
   Settings,
 } from "@selfschool/shared";
 import { BANK, EXAM_POOL_IDS, INITIAL_COMPLETED, OPEN_MAX, QUIZ_QUESTION_IDS, TS, lessonRef, type KeyedQuestion } from "./fixtures";
@@ -18,7 +19,12 @@ export interface AnswerRec {
   /** Open answers: epoch ms when the (simulated) runner finishes grading; Infinity = never. */
   gradeAt?: number;
   jobId?: string;
+  /** Open answers: the learner's own mark against the rubric, until the (simulated) AI grade replaces it. */
+  self?: SelfMark;
 }
+
+const MOCK_RUBRIC = "Says that types are compared by their shape (members), not by their name, and gives an example of two differently named types that are compatible.";
+const SELF_FRACTION: Record<SelfMark, number> = { got: 1, partly: 0.5, missed: 0 };
 
 export interface AttemptRec {
   id: string;
@@ -181,7 +187,12 @@ export function answerView(db: MockDb, att: AttemptRec, qid: string): AnswerResu
   if (q.type === "open" && rec.input.type === "open") {
     const text = rec.input.text;
     const done = (rec.gradeAt ?? 0) <= Date.now() && (rec.gradeAt === 0 || db.aiAvailable());
-    if (!done) return { ...base, state: "grading", correct: null, marks: null, answerText: text };
+    const rubric = att.reveal ? { rubric: MOCK_RUBRIC } : {};
+    if (!done && rec.self) {
+      const got = SELF_FRACTION[rec.self] * OPEN_MAX;
+      return { ...base, state: "self", correct: rec.self === "got", marks: { got, max: OPEN_MAX }, answerText: text, ...rubric, selfMark: rec.self };
+    }
+    if (!done) return { ...base, state: "grading", correct: null, marks: null, answerText: text, ...rubric };
     const got: number = text.length > 100 ? 2 : 1;
     return {
       ...base, state: "graded", correct: got === OPEN_MAX, marks: { got, max: OPEN_MAX }, answerText: text,

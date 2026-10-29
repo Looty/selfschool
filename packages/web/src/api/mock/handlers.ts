@@ -453,6 +453,17 @@ export const handlers: Handlers = {
     return answerView(db, att, params.questionId)!;
   },
 
+  selfMarkAnswer: ({ params, body }, db) => {
+    const att = getAttempt(db, params.attemptId);
+    const rec = att.answers[params.questionId];
+    if (BANK[params.questionId]?.type !== "open") throw new ApiError(400, "only open answers are marked by the learner");
+    if (!att.reveal) throw new ApiError(409, "this quiz does not show answers, so it cannot be self-marked");
+    if (!rec) throw new ApiError(409, "submit the answer first");
+    if (answerView(db, att, params.questionId)?.state === "graded") throw new ApiError(409, "this answer is already graded");
+    rec.self = body.mark;
+    return answerView(db, att, params.questionId)!;
+  },
+
   finishAttempt: ({ params }, db) => {
     const att = getAttempt(db, params.attemptId);
     att.finishedAt ??= Date.now();

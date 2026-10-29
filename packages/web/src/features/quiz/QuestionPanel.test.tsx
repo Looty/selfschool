@@ -158,6 +158,40 @@ describe("grading pending -> feedback", () => {
 
   it("paused AI shows an explicit notice before submitting", () => {
     renderPanel(base({ question: open, index: 2, aiPaused: true }));
-    expect(screen.getByRole("note").textContent).toMatch(/paused.*graded later/);
+    expect(screen.getByRole("note").textContent).toMatch(/paused.*against the rubric and mark it yourself.*AI grades it later/);
+  });
+});
+
+describe("self-check while AI is paused", () => {
+  const rubric = "Says types are compared by shape.";
+  const pending: AnswerResult = { questionId: "q3", type: "open", state: "grading", correct: null, marks: null, answerText: "same shape", rubric, feedback: null, jobId: "j1" };
+  const marked: AnswerResult = { ...pending, state: "self", selfMark: "partly", correct: false, marks: { got: 0.5, max: 1 } };
+
+  it("shows the rubric and three marks instead of the grading spinner, and sends the chosen mark", async () => {
+    const user = userEvent.setup();
+    const onSelfMark = vi.fn();
+    const { container } = renderPanel(base({ question: open, index: 2, stage: "answered", result: pending, aiPaused: true, onSelfMark }));
+    expect(screen.getByText(rubric)).toBeTruthy();
+    expect(screen.queryByText(/Queued for the runner/)).toBeNull();
+    expect(container.querySelectorAll(".spinner")).toHaveLength(0);
+    expect(within(screen.getByRole("status")).getAllByText("Mark it yourself").length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: "Partly" }));
+    expect(onSelfMark).toHaveBeenCalledWith("partly");
+    // the quiz keeps moving without a mark
+    expect((screen.getByRole("button", { name: "Next question" }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("keeps the grading view when AI is running", () => {
+    renderPanel(base({ question: open, index: 2, stage: "answered", result: pending, aiPaused: false, onSelfMark: () => {} }));
+    expect(screen.getByText(/Queued for the runner/)).toBeTruthy();
+    expect(screen.queryByText(rubric)).toBeNull();
+  });
+
+  it("shows the chosen mark as pressed, labelled in the status pill, and offers Ask about this", () => {
+    renderPanel(base({ question: open, index: 2, stage: "answered", result: marked, aiPaused: true, onSelfMark: () => {} }));
+    expect(screen.getByRole("button", { name: "Partly" }).getAttribute("aria-pressed")).toBe("true");
+    expect(screen.getByRole("button", { name: "Got it" }).getAttribute("aria-pressed")).toBe("false");
+    expect(within(screen.getByRole("status")).getAllByText("Self-marked · partly").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /Ask about this/ })).toBeTruthy();
   });
 });

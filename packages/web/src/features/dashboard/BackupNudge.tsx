@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiHref } from "../../basePath";
 import { Button } from "../../ui";
 import { LOCAL, backupNudgeDue, describeLastBackup, loadBackupSnooze, loadLastBackup, markBackupDone, snoozeBackupNudge } from "../settings/backup";
 
@@ -24,7 +25,7 @@ export function BackupNudge({ hasProgress }: { hasProgress: boolean }) {
         Your progress is saved only in this browser{persisted === false ? ", and the browser may clear it when space runs low" : ""}. {describeLastBackup(now, last)}.
       </span>
       <a
-        href="/api/backup"
+        href={apiHref("/api/backup", import.meta.env.BASE_URL)}
         download
         onClick={() => {
           markBackupDone();

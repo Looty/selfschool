@@ -349,9 +349,14 @@ export type AiFeedback = z.infer<typeof aiFeedbackSchema>;
 /**
  * recorded: stored, nothing revealed (exams, or quiz with show_answers off)
  * scored: MCQ/short scored locally; grading: open answer queued as a job;
- * graded: AI feedback arrived; failed: the grade job failed (retry via re-submit).
+ * graded: AI feedback arrived; failed: the grade job failed (retry via re-submit);
+ * self: an open answer the learner marked against the rubric while AI was off (an AI grade replaces it later).
  */
-export const answerStateSchema = z.enum(["recorded", "scored", "grading", "graded", "failed"]);
+export const answerStateSchema = z.enum(["recorded", "scored", "grading", "graded", "failed", "self"]);
+
+/** How the learner marks their own open answer against the rubric: 1, 0.5 or 0 marks. */
+export const selfMarkSchema = z.enum(["got", "partly", "missed"]);
+export type SelfMark = z.infer<typeof selfMarkSchema>;
 
 export const answerResultSchema = z.object({
   questionId: id,
@@ -413,6 +418,10 @@ export const answerResultSchema = z.object({
   accepted: z.array(z.string()).optional(),
   /** Open: what the learner wrote, feedback when graded. */
   answerText: z.string().optional(),
+  /** Open, once revealed and not yet AI-graded: the rubric, so the learner can mark the answer themselves. */
+  rubric: z.string().optional(),
+  /** Open, state `self`: the learner's own mark. */
+  selfMark: selfMarkSchema.optional(),
   feedback: aiFeedbackSchema.nullable(),
   jobId: z.string().nullable(),
 });
@@ -910,6 +919,14 @@ export const routes = {
     path: "/attempts/:attemptId/answers/:questionId",
     params: p({ attemptId: id, questionId: id }),
     body: answerInputSchema,
+    res: answerResultSchema,
+  }),
+  /** Marks an open answer against its rubric while it waits for AI (quizzes that show answers). An AI grade replaces it. */
+  selfMarkAnswer: route({
+    method: "POST",
+    path: "/attempts/:attemptId/answers/:questionId/self-mark",
+    params: p({ attemptId: id, questionId: id }),
+    body: z.object({ mark: selfMarkSchema }),
     res: answerResultSchema,
   }),
   finishAttempt: route({ method: "POST", path: "/attempts/:attemptId/finish", params: attemptP, res: attemptResultSchema }),

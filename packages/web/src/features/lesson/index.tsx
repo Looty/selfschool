@@ -6,6 +6,10 @@ import { ApiError } from "../../api/client";
 import { useAsk, useChat, useCompleteLesson, useLesson, useProposeExtension } from "../../api/hooks";
 import { textDirection } from "../../api/language";
 import { Button } from "../../ui";
+import { BottomStack } from "../run/BottomStack";
+import { EditorDrawer, useDrawerCovers } from "../run/EditorDrawer";
+import { LabProvider, useLab } from "../run/lab";
+import { LabDock } from "../run/LabDock";
 import { Article } from "./Article";
 import { AskBar } from "./AskBar";
 import { LessonBand } from "./LessonBand";
@@ -48,8 +52,23 @@ function Failure({ error, courseId, onRetry }: { error: unknown; courseId: strin
   );
 }
 
+const NO_RESOURCES: readonly { name: string; url: string }[] = [];
+
+/**
+ * The lesson page inside the course's lab. The lab (docked terminal, editor drawer, run engine) wraps the loading and
+ * error states too, so moving to the next lesson keeps the terminal and a loaded Python.
+ */
 export default function LessonFeature() {
   const { courseId = "", lessonId = "" } = useParams();
+  const lessonQ = useLesson(courseId, lessonId);
+  return (
+    <LabProvider courseId={courseId} resources={lessonQ.data?.resources ?? NO_RESOURCES}>
+      <LessonPage courseId={courseId} lessonId={lessonId} />
+    </LabProvider>
+  );
+}
+
+function LessonPage({ courseId, lessonId }: { courseId: string; lessonId: string }) {
   const navigate = useNavigate();
   const lessonQ = useLesson(courseId, lessonId);
   const chatQ = useChat(courseId, lessonId);
@@ -57,6 +76,8 @@ export default function LessonFeature() {
   const complete = useCompleteLesson();
   const propose = useProposeExtension();
   const { family } = useReadingFont();
+  const lab = useLab();
+  const drawerCovers = useDrawerCovers();
 
   const [draft, setDraft] = useState("");
   const [quote, setQuote] = useState<string | null>(null);
@@ -74,8 +95,17 @@ export default function LessonFeature() {
   const lesson = lessonQ.data;
   const sources = useMemo(() => new Set(lesson?.sources.map((s) => s.n) ?? []), [lesson?.sources]);
 
-  if (lessonQ.isPending) return <Skeleton />;
-  if (lessonQ.isError || !lesson) return <Failure error={lessonQ.error} courseId={courseId} onRetry={() => lessonQ.refetch()} />;
+  // the terminal stays on screen (and keeps its state) while the next lesson loads
+  if (lessonQ.isPending || lessonQ.isError || !lesson) {
+    return (
+      <>
+        {lessonQ.isPending ? <Skeleton /> : <Failure error={lessonQ.error} courseId={courseId} onRetry={() => lessonQ.refetch()} />}
+        <BottomStack>
+          <LabDock />
+        </BottomStack>
+      </>
+    );
+  }
 
   const messages = chatQ.data?.messages ?? [];
   const aiAvailable = chatQ.data?.ai.available ?? lesson.ai.available;
@@ -117,55 +147,69 @@ export default function LessonFeature() {
     );
   };
 
+  // the same shape as the loading branch above (page, then the bottom stack), so the terminal stays mounted across it
   return (
-    <div data-hue={lesson.course.hue} className="flex min-h-[calc(100vh-56px)] flex-col bg-bg">
+    <>
+    <div data-hue={lesson.course.hue} className="flex min-h-[calc(100vh-56px-var(--lab-bottom,0px))] flex-col bg-bg">
       <LessonBand lesson={lesson} />
       <ReadingProgress resetKey={`${courseId}/${lessonId}`} />
-      <div dir={textDirection(lesson.language)} lang={lesson.language} className="contents">
-        <Article
-          lesson={lesson}
-          fontFamily={family}
-          onAsk={askAbout}
-          onComplete={() => complete.mutate({ params: { courseId, lessonId } })}
-          onNext={() => {
-            const next = lesson.next;
-            if (!next) return;
-            // Moving on from a quiz-less lesson counts as finishing it; a failed save must not trap the reader.
-            complete.mutate({ params: { courseId, lessonId } }, { onSettled: () => navigate(`/courses/${courseId}/lessons/${next.id}`) });
-          }}
-          completing={complete.isPending}
-        />
+      {/* the lesson, with the lab's editor drawer beside it (over it on narrow screens) */}
+      <div className="flex grow items-start">
+        {/* on a narrow screen the open editor covers the lesson: the lesson behind it takes no focus or clicks */}
+        <div className="flex min-w-0 flex-1 flex-col self-stretch" inert={!!lab?.editing && drawerCovers}>
+          <div dir={textDirection(lesson.language)} lang={lesson.language} className="contents">
+            <Article
+              lesson={lesson}
+              fontFamily={family}
+              onAsk={askAbout}
+              onComplete={() => complete.mutate({ params: { courseId, lessonId } })}
+              onNext={() => {
+                const next = lesson.next;
+                if (!next) return;
+                // Moving on from a quiz-less lesson counts as finishing it; a failed save must not trap the reader.
+                complete.mutate({ params: { courseId, lessonId } }, { onSettled: () => navigate(`/courses/${courseId}/lessons/${next.id}`) });
+              }}
+              completing={complete.isPending}
+            />
+          </div>
+          {complete.isError ? (
+            <p role="alert" className="mx-auto -mt-8 mb-8 w-full max-w-[calc(940px*var(--content-scale,1))] px-7 text-sm text-bad">
+              Couldn't mark the lesson complete. <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-bad underline" onClick={() => complete.mutate({ params: { courseId, lessonId } })}>Try again</button>
+            </p>
+          ) : null}
+          <Thread
+            courseId={courseId}
+            chapters={lesson.chapters}
+            messages={messages}
+            aiAvailable={aiAvailable}
+            sources={sources}
+            unverified={chatQ.data?.unverified ?? lesson.origin === "quick"}
+            loading={chatQ.isPending}
+            error={chatQ.isError}
+            onRetry={() => chatQ.refetch()}
+            proposeState={(m) => proposals[m.id] ?? "idle"}
+            onPropose={proposeExtension}
+          />
+        </div>
+        <EditorDrawer className="fixed inset-x-0 top-0 z-30 shadow-[-12px_0_30px_rgba(11,18,32,0.18)] lg:sticky lg:inset-x-auto lg:z-10 lg:w-[var(--drawer-w)] lg:shrink-0" />
       </div>
-      {complete.isError ? (
-        <p role="alert" className="mx-auto -mt-8 mb-8 w-full max-w-[calc(940px*var(--content-scale,1))] px-7 text-sm text-bad">
-          Couldn't mark the lesson complete. <button type="button" className="cursor-pointer border-0 bg-transparent p-0 text-bad underline" onClick={() => complete.mutate({ params: { courseId, lessonId } })}>Try again</button>
-        </p>
-      ) : null}
-      <Thread
-        courseId={courseId}
-        chapters={lesson.chapters}
-        messages={messages}
-        aiAvailable={aiAvailable}
-        sources={sources}
-        unverified={chatQ.data?.unverified ?? lesson.origin === "quick"}
-        loading={chatQ.isPending}
-        error={chatQ.isError}
-        onRetry={() => chatQ.refetch()}
-        proposeState={(m) => proposals[m.id] ?? "idle"}
-        onPropose={proposeExtension}
-      />
-      <AskBar
-        aiAvailable={aiAvailable}
-        answerCount={answerCount}
-        value={draft}
-        onChange={setDraft}
-        quote={quote}
-        onClearQuote={() => setQuote(null)}
-        onSend={send}
-        sending={ask.isPending}
-        error={ask.isError ? "Couldn't send your question. Try again." : null}
-        inputRef={input}
-      />
     </div>
+      <BottomStack>
+        <LabDock />
+        <AskBar
+          pinned={false}
+          aiAvailable={aiAvailable}
+          answerCount={answerCount}
+          value={draft}
+          onChange={setDraft}
+          quote={quote}
+          onClearQuote={() => setQuote(null)}
+          onSend={send}
+          sending={ask.isPending}
+          error={ask.isError ? "Couldn't send your question. Try again." : null}
+          inputRef={input}
+        />
+      </BottomStack>
+    </>
   );
 }

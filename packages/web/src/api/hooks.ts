@@ -59,6 +59,7 @@ export const useAsk = () => useApiMutation("ask", ["chat", "lesson"]);
 export const useQuiz = (courseId: string, quizId: string) => useApiQuery("quiz", { params: { courseId, quizId } });
 export const useStartQuizAttempt = () => useApiMutation("startQuizAttempt", ["quiz"]);
 export const useSubmitAnswer = () => useApiMutation("submitAnswer", ["attempt"]);
+export const useSelfMarkAnswer = () => useApiMutation("selfMarkAnswer", ["attempt"]);
 export const useAttempts = () => useApiQuery("attempts", undefined);
 export const useDeleteAttempt = () => useApiMutation("deleteAttempt", ["attempts", "attempt", "course", "courses", "dashboard", "exam"]);
 export const useFinishAttempt = () => useApiMutation("finishAttempt", ["attempt", "course", "courses", "dashboard", "exam"]);

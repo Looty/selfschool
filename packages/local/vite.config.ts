@@ -93,6 +93,8 @@ export default defineConfig({
     "import.meta.env.VITE_LOCAL": JSON.stringify("1"),
   },
   plugins: [localEntry(), serviceWorker(), versionFile(), sampleZip(), react(), tailwindcss()],
+  // the in-browser code runner's workers are ES modules (the Python one imports Pyodide from the CDN)
+  worker: { format: "es" },
   resolve: {
     alias: [
       { find: /^@selfschool\/shared$/, replacement: here("../shared/src/index.ts") },

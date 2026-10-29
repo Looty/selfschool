@@ -1,9 +1,14 @@
 import { useMemo, useRef } from "react";
 import type { Lesson } from "@selfschool/shared";
 import { Link, useNavigate } from "react-router-dom";
+import { apiHref } from "../../basePath";
 import { InlineMarkdown } from "../../components/InlineMarkdown";
 import { TextLink } from "../../components/TextLink";
 import { Button, SectionLabel } from "../../ui";
+import { useLabFiles } from "../run/compat";
+import { commandRuns } from "../run/files";
+import { useLab } from "../run/lab";
+import { LabCard } from "../run/LabCard";
 import { DownloadIcon } from "./icons";
 import { Markdown } from "./MarkdownView";
 import { glossaryEntries, parseGlossary, unmatchedLines } from "./glossary";
@@ -89,6 +94,20 @@ export function Article({
   const courseId = lesson.course.id;
   const navigate = useNavigate();
   const locked = Boolean(lesson.quiz) && !lesson.completed;
+  // the lab: the lesson's scripts (not the helpers they import). Its card is the one place to run or edit them; the
+  // lesson text only links the files for download
+  const lab = useLab();
+  const labFiles = useLabFiles(lesson.resources).filter((f) => !f.helper);
+  // the arguments the lesson's own command gives each script, so the lab's Run matches what the text shows
+  const commands = useMemo(() => {
+    const names = lesson.resources.map((r) => r.name);
+    const found = new Map<string, string>();
+    for (const m of lesson.markdown.matchAll(/```[^\n]*\n([\s\S]*?)```/g)) {
+      for (const r of commandRuns(m[1]!, names)) if (!found.has(r.entry)) found.set(r.entry, r.args);
+    }
+    return found;
+  }, [lesson.markdown, lesson.resources]);
+  const hasLab = labFiles.length > 0;
 
   return (
     <article className="lesson-article mx-auto box-border w-full max-w-[calc(940px*var(--content-scale,1))] grow px-7 pb-14 pt-11" aria-labelledby="lesson-title">
@@ -99,8 +118,10 @@ export function Article({
         {lesson.lesson.title}
       </h1>
       <div className="mb-8 max-w-[78ch] text-[calc(19px*var(--prose-scale,1))] leading-[1.55] text-text2 [&_p]:m-0">
-        <Markdown text={lesson.standfirst} sources={known} glossary={glossary} />
+        <Markdown text={lesson.standfirst} sources={known} glossary={glossary} resources={lesson.resources} />
       </div>
+
+      {hasLab ? <LabCard files={labFiles} commands={commands} /> : null}
 
       <div ref={prose} className="lesson-prose" style={{ fontFamily }}>
         {blocks.map((b, i) =>
@@ -109,7 +130,7 @@ export function Article({
           ) : b.kind === "key-takeaways" ? (
             <KeyTakeaways key={i} text={b.text} sources={known} />
           ) : b.kind === "glossary" ? null : (
-            <Markdown key={i} text={b.text} sources={known} glossary={glossary} />
+            <Markdown key={i} text={b.text} sources={known} glossary={glossary} resources={lesson.resources} />
           ),
         )}
         <UnusedTerms terms={unused} />
@@ -210,8 +231,8 @@ export function Article({
           <SectionLabel>Resources</SectionLabel>
           <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 text-sm">
             {lesson.resources.map((r) => (
-              <li key={r.url}>
-                <a href={r.url} download className="inline-flex items-center gap-2 text-text no-underline hover:underline">
+              <li key={r.url} className="flex flex-wrap items-center gap-x-3">
+                <a href={apiHref(r.url, import.meta.env.BASE_URL)} download className="inline-flex items-center gap-2 text-text no-underline hover:underline">
                   <span className="text-text3">
                     <DownloadIcon />
                   </span>
@@ -220,6 +241,11 @@ export function Article({
               </li>
             ))}
           </ul>
+          {lab ? (
+            <button type="button" onClick={lab.openEmpty} className="mt-2 cursor-pointer border-0 bg-transparent p-0 text-[13px] text-text2 hover:text-text hover:underline">
+              Run your own file in the browser…
+            </button>
+          ) : null}
         </section>
       ) : null}
 

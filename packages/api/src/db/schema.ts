@@ -113,7 +113,8 @@ export const attemptAnswers = sqliteTable(
     answer: text("answer", { mode: "json" }).$type<unknown>(),
     correct: integer("correct", { mode: "boolean" }),
     marks: real("marks"),
-    grader: text("grader", { enum: ["local", "ai"] }).notNull(),
+    /** `self`: an open answer the learner marked against the rubric; its grade job stays queued and an AI grade replaces the mark. */
+    grader: text("grader", { enum: ["local", "ai", "self"] }).notNull(),
     /** JSON array of feedback points (AI-graded answers). */
     feedback: text("feedback"),
     jobId: text("job_id").references(() => jobs.id),
