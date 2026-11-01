@@ -1,4 +1,4 @@
-import { apiHref } from "../../basePath";
+import { startDownload } from "../../download";
 import { Button, cx } from "../../ui";
 import type { LabFile } from "./compat";
 import { useLab } from "./lab";
@@ -70,7 +70,7 @@ export function LabCard({
               <code className="font-mono text-text2">{f.name}</code>
               <span className="text-text3"> needs {f.compat?.ok === false ? f.compat.needs.join(", ") : ""}, which cannot run in a browser</span>
             </span>
-            <Button size="sm" onClick={() => download(f.url, f.name)} aria-label={`Download ${f.name}`}>
+            <Button size="sm" onClick={() => startDownload(f.url, f.name)} aria-label={`Download ${f.name}`}>
               Download
             </Button>
           </li>
@@ -78,11 +78,4 @@ export function LabCard({
       </ul>
     </section>
   );
-}
-
-function download(url: string, name: string) {
-  const a = document.createElement("a");
-  a.href = apiHref(url, import.meta.env.BASE_URL);
-  a.download = name;
-  a.click();
 }

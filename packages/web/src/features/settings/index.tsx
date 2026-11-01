@@ -7,6 +7,7 @@ import { usePackages, useSettings, useUpdateSettings } from "../../api/hooks";
 import { COMMON_LANGUAGES, languageName, loadContentLanguage, readingLanguage, saveContentLanguage } from "../../api/language";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { apiHref } from "../../basePath";
+import { downloadOnClick } from "../../download";
 import { LOCAL, describeLastBackup, loadLastBackup, markBackupDone } from "./backup";
 import { ImportDialog, type ImportSource } from "./ImportDialog";
 import { Modal } from "./Modal";
@@ -668,10 +669,10 @@ function Data() {
           <a
             href={apiHref("/api/backup", import.meta.env.BASE_URL)}
             download
-            onClick={() => {
+            onClick={downloadOnClick("/api/backup", undefined, () => {
               markBackupDone();
               setLast(loadLastBackup());
-            }}
+            })}
             className="inline-flex h-8 items-center rounded-button border border-border2 bg-bg px-3 text-[13px] font-medium text-text no-underline hover:bg-surface2"
           >
             Export backup
