@@ -2,6 +2,7 @@ import { useMemo, useRef } from "react";
 import type { Lesson } from "@selfschool/shared";
 import { Link, useNavigate } from "react-router-dom";
 import { apiHref } from "../../basePath";
+import { downloadOnClick } from "../../download";
 import { InlineMarkdown } from "../../components/InlineMarkdown";
 import { TextLink } from "../../components/TextLink";
 import { Button, SectionLabel } from "../../ui";
@@ -232,7 +233,7 @@ export function Article({
           <ul className="m-0 mt-2 flex list-none flex-col gap-1 p-0 text-sm">
             {lesson.resources.map((r) => (
               <li key={r.url} className="flex flex-wrap items-center gap-x-3">
-                <a href={apiHref(r.url, import.meta.env.BASE_URL)} download className="inline-flex items-center gap-2 text-text no-underline hover:underline">
+                <a href={apiHref(r.url, import.meta.env.BASE_URL)} download onClick={downloadOnClick(r.url, r.name)} className="inline-flex items-center gap-2 text-text no-underline hover:underline">
                   <span className="text-text3">
                     <DownloadIcon />
                   </span>

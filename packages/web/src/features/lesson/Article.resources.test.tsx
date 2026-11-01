@@ -60,6 +60,27 @@ describe("lesson resources", () => {
     for (const a of screen.getAllByRole("link", { name: /lab01\.py/ })) expect(a.getAttribute("href")).toBe("/api/courses/c/files/resources/lab01.py");
   });
 
+  // The browser's own download request skips the in-browser build's service worker, so a click downloads through fetch().
+  it("a click on a resource link downloads it through fetch, not by following the link", async () => {
+    vi.stubEnv("BASE_URL", "/selfschool/");
+    const fetchMock = vi.fn(async (_url: string) => new Response("print(1)"));
+    vi.stubGlobal("fetch", fetchMock);
+    URL.createObjectURL = vi.fn(() => "blob:x");
+    URL.revokeObjectURL = vi.fn();
+    const saved: string[] = [];
+    const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      saved.push(`${this.href} ${this.download}`);
+    });
+    renderArticle();
+    for (const link of screen.getAllByRole("link", { name: /lab01\.py/ })) {
+      expect(fireEvent.click(link)).toBe(false); // the native download was prevented
+    }
+    await waitFor(() => expect(saved).toEqual(["blob:x lab01.py", "blob:x lab01.py"]));
+    expect(fetchMock.mock.calls.filter(([u]) => u === "/api/courses/c/files/resources/lab01.py").length).toBeGreaterThanOrEqual(2);
+    click.mockRestore();
+    vi.unstubAllGlobals();
+  });
+
   /** Records what the runner starts, in place of a real worker. */
   const started: { entry: string; args: string[] }[] = [];
   const stubRunner = () => {

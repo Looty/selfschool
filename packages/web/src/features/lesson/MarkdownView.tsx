@@ -3,6 +3,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { Lesson } from "@selfschool/shared";
 import { apiHref } from "../../basePath";
+import { downloadOnClick } from "../../download";
 import { CodeBlock } from "../../components/code/CodeBlock";
 import { TextLink } from "../../components/TextLink";
 import { remarkGlossary, type GlossaryEntry } from "./glossary";
@@ -58,10 +59,11 @@ function withResources(resources: readonly LessonResource[]): Components {
   return {
     ...components,
     code({ className, children }) {
-      const url = byName.get(textOf(children));
+      const name = textOf(children);
+      const url = byName.get(name);
       if (!url) return <code className={className}>{children}</code>;
       return (
-        <a href={apiHref(url, import.meta.env.BASE_URL)} download title="Download">
+        <a href={apiHref(url, import.meta.env.BASE_URL)} download onClick={downloadOnClick(url, name)} title="Download">
           <code className={className}>{children}</code>
         </a>
       );

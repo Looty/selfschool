@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiHref } from "../../basePath";
+import { downloadOnClick } from "../../download";
 import { Button } from "../../ui";
 import { LOCAL, backupNudgeDue, describeLastBackup, loadBackupSnooze, loadLastBackup, markBackupDone, snoozeBackupNudge } from "../settings/backup";
 
@@ -27,10 +28,10 @@ export function BackupNudge({ hasProgress }: { hasProgress: boolean }) {
       <a
         href={apiHref("/api/backup", import.meta.env.BASE_URL)}
         download
-        onClick={() => {
+        onClick={downloadOnClick("/api/backup", undefined, () => {
           markBackupDone();
           setHidden(true);
-        }}
+        })}
         className="inline-flex h-7 items-center rounded-button border border-border2 bg-bg px-2.5 text-xs font-medium text-text no-underline hover:bg-surface2"
       >
         Export backup
