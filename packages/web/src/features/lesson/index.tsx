@@ -12,6 +12,7 @@ import { LabProvider, useLab } from "../run/lab";
 import { LabDock } from "../run/LabDock";
 import { Article } from "./Article";
 import { AskBar } from "./AskBar";
+import { BackToTop } from "./BackToTop";
 import { LessonBand } from "./LessonBand";
 import { ReadingProgress } from "./ReadingProgress";
 import { Thread, type ProposeState } from "./Thread";
@@ -194,6 +195,8 @@ function LessonPage({ courseId, lessonId }: { courseId: string; lessonId: string
         <EditorDrawer className="fixed inset-x-0 top-0 z-30 shadow-[-12px_0_30px_rgba(11,18,32,0.18)] lg:sticky lg:inset-x-auto lg:z-10 lg:w-[var(--drawer-w)] lg:shrink-0" />
       </div>
     </div>
+      {/* the open editor drawer takes the right edge, so the button steps aside */}
+      <BackToTop hidden={!!lab?.editing} />
       <BottomStack>
         <LabDock />
         <AskBar
