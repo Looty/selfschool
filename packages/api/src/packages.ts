@@ -4,7 +4,8 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { eq } from "drizzle-orm";
 import { unzipSync } from "fflate";
-import { SCHEMA_VERSION, type CourseChoice, type PackageInfo, type PackagePreview, type PackageUpdates } from "@selfschool/shared";
+import { parse as parseYaml } from "yaml";
+import { courseManifestSchema, SCHEMA_VERSION, type CourseChoice, type CourseManifest, type PackageInfo, type PackagePreview, type PackageUpdates } from "@selfschool/shared";
 import { validateCoursePackage } from "@selfschool/shared/node";
 import { listFiles, loadCourse } from "./catalog.js";
 import { loadCourses, type Ctx, type GitRunner } from "./ctx.js";
@@ -120,7 +121,7 @@ interface FetchedPackage {
  * Fetches a course package without installing it: a public https git repo (shallow clone, never executed) or an
  * absolute local folder. Removes its temp folder itself when it throws; otherwise the caller does.
  */
-async function fetchPackage(ctx: Ctx, body: { url: string; path: string; ref: string }): Promise<FetchedPackage> {
+async function fetchPackage(ctx: Ctx, body: { url: string; path: string; ref: string }, commit?: string): Promise<FetchedPackage> {
   const coursesDir = resolve(ctx.catalog.coursesDir);
   mkdirSync(coursesDir, { recursive: true });
   const isUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(body.url);
@@ -138,7 +139,7 @@ async function fetchPackage(ctx: Ctx, body: { url: string; path: string; ref: st
       await ctx.git(
         ["-c", "protocol.allow=never", "-c", "protocol.https.allow=always", "-c", "core.symlinks=false",
           "clone", "--depth", "1", "--single-branch", "--no-tags", "--branch", ref, "--", url, tmp],
-        { timeoutMs: 120_000 },
+        { timeoutMs: 120_000, subpath: sub, ...(commit ? { commit } : {}) },
       ).catch((e: Error) => {
         throw new HttpError(422, `git clone failed: ${String(e.message).split("\n")[0]}`);
       });
@@ -187,8 +188,6 @@ function missingCourseHint(ctx: Ctx, pkgDir: string, url: string, basePath: stri
       const path = basePath ? `${basePath}/${d.name}` : d.name;
       const check = validateCoursePackage(dir);
       const id = check.manifest?.id ?? d.name;
-      const taken = existsSync(join(resolve(ctx.catalog.coursesDir), id));
-      const prev = ctx.db.select().from(packages).where(eq(packages.id, id)).get();
       return {
         path,
         id,
@@ -196,12 +195,73 @@ function missingCourseHint(ctx: Ctx, pkgDir: string, url: string, basePath: stri
         level: check.manifest?.level ?? "",
         lessonCount: countLessons(dir),
         ok: check.ok,
-        conflict: !taken || removed.has(id) ? "none" : sameSource(prev, url, path) ? "update" : "clash",
+        conflict: choiceConflict(ctx, removed, id, url, path),
       };
     });
+  return { choices, message: choices.length ? coursesMessage(choices.length) : "no course.yaml in this folder" };
+}
+
+const coursesMessage = (n: number) => `This repository holds ${n} course${n === 1 ? "" : "s"}.`;
+
+/** Whether importing course `id` from `url`/`path` would be new, replace the same source, or clash with another. */
+function choiceConflict(ctx: Ctx, removed: Set<string>, id: string, url: string, path: string): CourseChoice["conflict"] {
+  const taken = existsSync(join(resolve(ctx.catalog.coursesDir), id));
+  const prev = ctx.db.select().from(packages).where(eq(packages.id, id)).get();
+  return !taken || removed.has(id) ? "none" : sameSource(prev, url, path) ? "update" : "clash";
+}
+
+/**
+ * The choice list for a repo folder of several courses, built from the repo's file list and each course.yaml
+ * instead of downloading every course (on GitHub, one request per file). The courses are not validated here
+ * (`ok: null`, or false when course.yaml itself is broken); importing one validates it. No preview when the
+ * runner cannot look into this repo, or the folder is a course itself or holds none: the full fetch handles
+ * those, reusing `commit` so the ref is not resolved twice.
+ */
+async function peekChoices(ctx: Ctx, body: { url: string; path: string; ref: string }): Promise<{ preview: PackagePreview | null; commit?: string }> {
+  if (!ctx.git.peek || !/^https:\/\//i.test(body.url)) return { preview: null };
+  const url = validateGitUrl(body.url);
+  const ref = validateRef(body.ref || "main");
+  const sub = validateSubpath(body.path);
+  const repo = await ctx.git.peek(url, ref, 120_000).catch((e: Error) => {
+    throw new HttpError(422, `git clone failed: ${String(e.message).split("\n")[0]}`);
+  });
+  if (!repo) return { preview: null };
+  const prefix = sub ? `${sub}/` : "";
+  const inFolder = repo.files.filter((f) => f.startsWith(prefix)).map((f) => f.slice(prefix.length).split("/"));
+  if (inFolder.some((p) => p.length === 1 && p[0] === "course.yaml")) return { preview: null, commit: repo.commit };
+  const dirs = inFolder.filter((p) => p.length === 2 && p[1] === "course.yaml" && !p[0]!.startsWith(".")).map((p) => p[0]!).sort();
+  if (!dirs.length) return { preview: null, commit: repo.commit };
+
+  const removed = removedIds(ctx.db);
+  const choices = await Promise.all(
+    dirs.map(async (d): Promise<CourseChoice> => {
+      const path = `${prefix}${d}`;
+      // lesson-NN.md one level down, as countLessons counts them on disk
+      const lessonCount = inFolder.filter((p) => p.length === 3 && p[0] === d && /^lesson-\d+\.md$/.test(p[2]!)).length;
+      const text = await repo.read(`${path}/course.yaml`).then(
+        (b) => new TextDecoder().decode(b),
+        (e: Error) => {
+          throw new HttpError(422, `git clone failed: ${String(e.message).split("\n")[0]}`);
+        },
+      );
+      let manifest: CourseManifest | null = null;
+      try {
+        const parsed = courseManifestSchema.safeParse(parseYaml(text));
+        manifest = parsed.success ? parsed.data : null;
+      } catch {
+        // any parse error (yaml throws ReferenceError for a bad alias, not only YAMLError) marks just this course broken, as the validator does
+      }
+      const id = manifest?.id ?? d;
+      return { path, id, title: manifest?.title ?? d, level: manifest?.level ?? "", lessonCount, ok: manifest ? null : false, conflict: choiceConflict(ctx, removed, id, url, path) };
+    }),
+  );
+  const from = `${url.replace(/^https:\/\//, "")}${sub ? `/${sub}` : ""} @ ${repo.commit.slice(0, 7)}`;
   return {
-    choices,
-    message: choices.length ? `This repository holds ${choices.length} course${choices.length === 1 ? "" : "s"}.` : "no course.yaml in this folder",
+    commit: repo.commit,
+    preview: {
+      ok: false, fileName: from, sizeBytes: 0, fileCount: 0, issues: [], conflict: "none", course: null, choices,
+      checks: [{ label: "Fetch the package", ok: true, detail: from }, { label: "Find course.yaml", ok: false, detail: coursesMessage(choices.length) }],
+    },
   };
 }
 
@@ -225,7 +285,9 @@ export async function previewPackage(ctx: Ctx, body: { url: string; path: string
   const empty = { fileName: body.url.replace(/^https:\/\//, "").slice(0, 120), sizeBytes: 0, fileCount: 0, issues: [], conflict: "none" as const, course: null };
   let f: FetchedPackage;
   try {
-    f = await fetchPackage(ctx, body);
+    const peeked = await peekChoices(ctx, body);
+    if (peeked.preview) return peeked.preview;
+    f = await fetchPackage(ctx, body, peeked.commit);
   } catch (e) {
     const message = e instanceof HttpError ? e.message : "could not fetch the package";
     return { ...empty, ok: false, checks: [{ label: "Fetch the package", ok: false, detail: message }] };

@@ -1,9 +1,9 @@
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { GitRunner } from "../src/ctx.js";
-import { checkGithubUpdates, parseGithubUrl, withGithub } from "../src/githubGit.js";
+import { checkGithubUpdates, forgetGithubSnapshot, parseGithubUrl, withGithub } from "../src/githubGit.js";
 
 const SHA = "a".repeat(40);
 const tree = {
@@ -25,7 +25,10 @@ const stubFetch = (routes: Record<string, () => Response>) =>
 
 const clone = (url: string, dest: string, ref = "main") => ["clone", "--depth", "1", "--branch", ref, "--", url, dest];
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  forgetGithubSnapshot();
+});
 
 describe("withGithub", () => {
   it("clones a github.com repo through the web APIs, pinned to the commit, and answers rev-parse", async () => {
@@ -44,6 +47,78 @@ describe("withGithub", () => {
     expect(() => readFileSync(join(dest, "link"))).toThrow(); // symlinks and submodules are not fetched
     expect(await git(["rev-parse", "HEAD"], { cwd: dest, timeoutMs: 5000 })).toBe(SHA);
     expect(inner).not.toHaveBeenCalled();
+  });
+
+  describe("a repo of several courses", () => {
+    const files = ["course/course.yaml", "course/01-a/lesson-01.md", "course-2/course.yaml", "README.md"];
+    const raw = `https://raw.githubusercontent.com/o/r/${SHA}/`;
+    let requested: string[] = [];
+    beforeEach(() => {
+      requested = [];
+      vi.stubGlobal("fetch", async (url: string) => {
+        requested.push(url);
+        if (url === "https://api.github.com/repos/o/r/commits/main") return new Response(SHA);
+        if (url.startsWith(`https://api.github.com/repos/o/r/git/trees/${SHA}`)) return Response.json({ tree: files.map((path) => ({ path, mode: "100644", type: "blob" })) });
+        if (url.startsWith(raw)) return new Response(url.slice(raw.length));
+        return new Response("nope", { status: 404 });
+      });
+    });
+    const fresh = () => join(mkdtempSync(join(tmpdir(), "ghgit-")), "repo");
+    const downloads = () => requested.filter((u) => u.startsWith(raw)).map((u) => u.slice(raw.length)).sort();
+
+    it("downloads only the files under the subpath, not a sibling folder sharing its prefix", async () => {
+      const git = withGithub(vi.fn<GitRunner>());
+      const dest = fresh();
+      await git(clone("https://github.com/o/r", dest), { timeoutMs: 5000, subpath: "course" });
+      expect(downloads()).toEqual(["course/01-a/lesson-01.md", "course/course.yaml"]);
+      expect(readFileSync(join(dest, "course/01-a/lesson-01.md"), "utf8")).toBe("course/01-a/lesson-01.md");
+      expect(existsSync(join(dest, "course-2"))).toBe(false);
+    });
+
+    it("reuses the files of the same commit: a second clone asks only for the commit", async () => {
+      const git = withGithub(vi.fn<GitRunner>());
+      await git(clone("https://github.com/o/r", fresh()), { timeoutMs: 5000 }); // the whole repo (preview without a path)
+      requested = [];
+      const dest = fresh();
+      await git(clone("https://github.com/o/r", dest), { timeoutMs: 5000, subpath: "course" }); // then one course of it
+      expect(requested).toEqual(["https://api.github.com/repos/o/r/commits/main"]);
+      expect(readFileSync(join(dest, "course/course.yaml"), "utf8")).toBe("course/course.yaml");
+      expect(await git(["rev-parse", "HEAD"], { cwd: dest, timeoutMs: 5000 })).toBe(SHA);
+    });
+
+    it("downloads again when the branch moved to another commit", async () => {
+      const git = withGithub(vi.fn<GitRunner>());
+      await git(clone("https://github.com/o/r", fresh()), { timeoutMs: 5000, subpath: "course" });
+      forgetGithubSnapshot(); // stands in for a new commit: nothing cached for it
+      requested = [];
+      await git(clone("https://github.com/o/r", fresh()), { timeoutMs: 5000, subpath: "course" });
+      expect(downloads()).toEqual(["course/01-a/lesson-01.md", "course/course.yaml"]);
+    });
+
+    it("stops every download on the first failure, so nothing is written after the clone rejects", async () => {
+      const many = Array.from({ length: 40 }, (_, i) => `course/f${i}.md`);
+      vi.stubGlobal("fetch", async (url: string) => {
+        if (url === "https://api.github.com/repos/o/r/commits/main") return new Response(SHA);
+        if (url.startsWith(`https://api.github.com/repos/o/r/git/trees/${SHA}`)) return Response.json({ tree: many.map((path) => ({ path, mode: "100644", type: "blob" })) });
+        if (url.endsWith("/f0.md")) return new Response("", { status: 429 });
+        await new Promise((r) => setTimeout(r, 20));
+        return new Response("x");
+      });
+      const git = withGithub(vi.fn<GitRunner>());
+      const dest = fresh();
+      await expect(git(clone("https://github.com/o/r", dest), { timeoutMs: 5000, subpath: "course" })).rejects.toThrow(/could not download course\/f0\.md \(429\)/);
+      rmSync(dest, { recursive: true, force: true }); // what fetchPackage does on failure
+      await new Promise((r) => setTimeout(r, 60));
+      expect(existsSync(dest)).toBe(false);
+    });
+
+    it("creates no folder for a subpath that is not in the repo", async () => {
+      const git = withGithub(vi.fn<GitRunner>());
+      const dest = fresh();
+      await git(clone("https://github.com/o/r", dest), { timeoutMs: 5000, subpath: "nope" });
+      expect(downloads()).toEqual([]);
+      expect(existsSync(join(dest, "nope"))).toBe(false);
+    });
   });
 
   it("hands other hosts, other commands and unknown repos to the fallback git", async () => {

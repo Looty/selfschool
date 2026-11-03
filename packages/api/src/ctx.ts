@@ -6,7 +6,28 @@ import { lessonRevisions, packages, questions } from "./db/schema.js";
 import { HttpError, sha256 } from "./util.js";
 
 /** Runs git with an argv array (never a shell string). Injectable so tests never touch the network. */
-export type GitRunner = (args: string[], opts: { cwd?: string; timeoutMs: number }) => Promise<string>;
+/**
+ * Hints for a clone that runners may ignore: `subpath` = only that folder is needed; `commit` = the commit the
+ * ref was just resolved to (by `peek`), so it need not be asked again.
+ */
+export interface GitRunOptions {
+  cwd?: string;
+  timeoutMs: number;
+  subpath?: string;
+  commit?: string;
+}
+
+/** A repo's commit and file list, with single files read on demand. */
+export interface RepoPeek {
+  commit: string;
+  files: string[];
+  read(path: string): Promise<Uint8Array>;
+}
+
+export type GitRunner = ((args: string[], opts: GitRunOptions) => Promise<string>) & {
+  /** Optional: look into a repo without cloning it; null when this runner cannot for that URL (then clone). */
+  peek?: (url: string, ref: string, timeoutMs: number) => Promise<RepoPeek | null>;
+};
 
 export interface Ctx {
   db: Db;

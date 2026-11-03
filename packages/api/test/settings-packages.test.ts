@@ -1,10 +1,11 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, type Dirent, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative, sep } from "node:path";
 import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { packages } from "../src/db/schema.js";
 import type { GitRunner } from "../src/ctx.js";
+import { forgetGithubSnapshot, withGithub } from "../src/githubGit.js";
 import { validateGitUrl, validateRef, validateSubpath } from "../src/packages.js";
 import { fixtureDir, setup } from "./helpers.js";
 
@@ -82,6 +83,8 @@ describe("packages", () => {
     const git: GitRunner = async (args, opts) => {
       calls.push(args);
       if (args.includes("clone")) {
+        expect(opts.subpath).toBe("pkg/mini"); // so the GitHub runner downloads only that folder
+
         const dest = args[args.length - 1]!;
         cpSync(fixtureDir("mini"), join(dest, "pkg", "mini"), { recursive: true });
         // an attacker-controlled repo may carry symlinks; they must not survive
@@ -111,6 +114,88 @@ describe("packages", () => {
     // adding the same repo again updates in place; a different origin with the same id conflicts
     expect((await h.post("/packages", { url: "https://github.com/friend/courses.git", path: "pkg/mini", ref: "v1" })).status).toBe(200);
     expect((await h.post("/packages", { url: "https://github.com/other/courses.git", path: "pkg/mini", ref: "v1" })).status).toBe(409);
+  });
+
+  describe("a GitHub repo of several courses", () => {
+    const SHA = "b".repeat(40);
+    const raw = `https://raw.githubusercontent.com/o/r/${SHA}/`;
+    // the repo: the mini course, a course whose course.yaml is broken, and a README
+    const repoDir = () => {
+      const dir = mkdtempSync(join(tmpdir(), "selfschool-repo-"));
+      cpSync(fixtureDir("mini"), join(dir, "mini"), { recursive: true });
+      mkdirSync(join(dir, "broken"));
+      writeFileSync(join(dir, "broken", "course.yaml"), "id: [");
+      mkdirSync(join(dir, "alias"));
+      writeFileSync(join(dir, "alias", "course.yaml"), "id: *nowhere\n"); // yaml throws a ReferenceError here, not a YAMLError
+      writeFileSync(join(dir, "README.md"), "hi");
+      return dir;
+    };
+    let downloads: string[] = [];
+    let apiCalls = 0; // anonymous GitHub API requests are limited to 60 an hour
+    const serve = (dir: string) => {
+      const files = (readdirSync(dir, { recursive: true, withFileTypes: true }) as Dirent[])
+        .filter((d) => d.isFile())
+        .map((d) => relative(dir, join(d.parentPath, d.name)).split(sep).join("/"));
+      vi.stubGlobal("fetch", async (url: string) => {
+        if (url.startsWith("https://api.github.com/")) apiCalls++;
+        if (url === "https://api.github.com/repos/o/r/commits/main") return new Response(SHA);
+        if (url.startsWith(`https://api.github.com/repos/o/r/git/trees/${SHA}`)) return Response.json({ tree: files.map((path) => ({ path, mode: "100644", type: "blob" })) });
+        if (url.startsWith(raw)) {
+          const path = url.slice(raw.length).split("/").map(decodeURIComponent).join("/");
+          downloads.push(path);
+          return new Response(readFileSync(join(dir, path)));
+        }
+        return new Response("nope", { status: 404 });
+      });
+    };
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      forgetGithubSnapshot();
+      downloads = [];
+      apiCalls = 0;
+    });
+
+    it("lists the courses from each course.yaml without downloading them, like the full listing does", async () => {
+      const dir = repoDir();
+      serve(dir);
+      const h = setup({ coursesDir: mkdtempSync(join(tmpdir(), "selfschool-pk-")), git: withGithub(vi.fn<GitRunner>()) });
+      const r = await h.post("/packages/preview", { url: "https://github.com/o/r", path: "", ref: "main" });
+      expect(downloads.sort()).toEqual(["alias/course.yaml", "broken/course.yaml", "mini/course.yaml"]);
+      expect(apiCalls).toBe(2); // the commit and the file list
+      expect(r.json.checks).toEqual([
+        { label: "Fetch the package", ok: true, detail: `github.com/o/r @ ${SHA.slice(0, 7)}` },
+        { label: "Find course.yaml", ok: false, detail: "This repository holds 3 courses." },
+      ]);
+      // same titles, ids and lesson counts as the listing of a downloaded folder; only validation is left for the import
+      const full = (await h.post("/packages/preview", { url: dir, path: "", ref: "" })).json.choices;
+      expect(r.json.choices).toEqual(full.map((c: { ok: boolean }) => ({ ...c, ok: c.ok ? null : false })));
+      expect(r.json.choices.map((c: { path: string; ok: boolean | null }) => [c.path, c.ok])).toEqual([["alias", false], ["broken", false], ["mini", null]]);
+    });
+
+    it("imports a listed course from the files already read, and still refuses one that does not validate", async () => {
+      serve(repoDir());
+      const h = setup({ coursesDir: mkdtempSync(join(tmpdir(), "selfschool-pk-")), git: withGithub(vi.fn<GitRunner>()) });
+      await h.post("/packages/preview", { url: "https://github.com/o/r", path: "", ref: "main" });
+      downloads = [];
+      const ok = await h.post("/packages", { url: "https://github.com/o/r", path: "mini", ref: "main" });
+      expect(ok.status).toBe(200);
+      expect(ok.json).toMatchObject({ id: "mini", path: "mini", sha: SHA });
+      expect(downloads).not.toContain("mini/course.yaml"); // read for the list, not downloaded twice
+      expect(downloads.every((p) => p.startsWith("mini/"))).toBe(true);
+      const bad = await h.post("/packages", { url: "https://github.com/o/r", path: "broken", ref: "main" });
+      expect(bad.status).toBe(422);
+      expect(bad.json.error).toMatch(/not a valid course package/);
+    });
+
+    it("previews a course folder in full, as before, asking GitHub for the commit only once", async () => {
+      serve(repoDir());
+      const h = setup({ coursesDir: mkdtempSync(join(tmpdir(), "selfschool-pk-")), git: withGithub(vi.fn<GitRunner>()) });
+      const r = await h.post("/packages/preview", { url: "https://github.com/o/r", path: "mini", ref: "main" });
+      expect(r.json).toMatchObject({ ok: true, course: { id: "mini" } });
+      expect(r.json.choices).toBeUndefined();
+      expect(apiCalls).toBe(2);
+      expect(downloads.every((p) => p.startsWith("mini/"))).toBe(true);
+    });
   });
 
   it("rejects clones that are not valid course packages", async () => {
