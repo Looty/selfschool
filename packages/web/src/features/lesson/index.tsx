@@ -166,7 +166,7 @@ function LessonPage({ courseId, lessonId }: { courseId: string; lessonId: string
               onNext={() => {
                 const next = lesson.next;
                 if (!next) return;
-                // Moving on from a quiz-less lesson counts as finishing it; a failed save must not trap the reader.
+                // Moving on (no quiz, or its quiz taken once) counts as finishing it; a failed save must not trap the reader.
                 complete.mutate({ params: { courseId, lessonId } }, { onSettled: () => navigate(`/courses/${courseId}/lessons/${next.id}`) });
               }}
               completing={complete.isPending}

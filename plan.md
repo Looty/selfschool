@@ -30,6 +30,7 @@ Content (lessons, sources, rubrics) is git-friendly files. State (progress, atte
 - **AI runs on the host, not in a container.** No AI CLI baked into any image (can't support N CLIs). A host-side **runner** pulls jobs from `api`. Containers never call the host (no host networking, no `host.docker.internal`).
 - **Provider adapters, not per-CLI images.** Contract: prompt on stdin, JSON on stdout, validated by zod. Claude is the only adapter in v1; codex/gemini later = a config entry. Check each CLI's real flags at implementation time, don't trust memory.
 - **Async grading.** "Grading..." state in the UI; deterministic scoring is instant.
+- **A lesson quiz is a step, not a wall.** It must be taken once before the next lesson opens; a pass completes the lesson by itself, and a score below the pass mark offers "Continue anyway" on the results page (and an open Next on the lesson). The lesson then completes, but its quiz card keeps saying "Not passed yet (best N%)" (`quiz.attempted/passed/bestPercent` in the lesson view).
 - **UI direction is approved and specified in [`docs/ui.md`](docs/ui.md)** (tokens, type, per-screen spec, accessibility). Reference prototypes in `docs/ui-reference/`. Key rules: ink primary buttons, indigo accent only for the tutor, one hue per course, hairlines not shadows, no global status chrome (AI runner state shows only as an inline notice where AI is unavailable, and on the Settings page).
 - Out of scope: payments, certificates, multi-user, video hosting, proctoring, discussions.
 

@@ -11,6 +11,9 @@ export function QuizResults({
   nextTitle,
   maxAttempts = 0,
   onRetake,
+  onContinueAnyway,
+  continuing = false,
+  continueError,
 }: {
   attempt: AttemptResult;
   lessonHref?: string;
@@ -21,6 +24,10 @@ export function QuizResults({
   maxAttempts?: number;
   /** Quiz page resets in place; elsewhere the retake is a link to the quiz. */
   onRetake?: () => void;
+  /** Below the pass mark: completes the lesson anyway and moves on. Shown only while there is no `nextHref`. */
+  onContinueAnyway?: () => void;
+  continuing?: boolean;
+  continueError?: string | null;
 }) {
   const used = a.history.length;
   const noneLeft = maxAttempts > 0 && used >= maxAttempts;
@@ -70,8 +77,17 @@ export function QuizResults({
           <Button variant="primary" size="lg" to={nextHref}>
             {nextTitle ? `Continue to ${nextTitle}` : "Continue"}
           </Button>
+        ) : onContinueAnyway ? (
+          <Button variant="secondary" size="lg" onClick={onContinueAnyway} disabled={continuing}>
+            Continue anyway
+          </Button>
         ) : null}
       </div>
+      {continueError ? (
+        <p role="alert" className="m-0 text-right text-sm text-bad">
+          Couldn't move on: {continueError}
+        </p>
+      ) : null}
     </div>
   );
 }

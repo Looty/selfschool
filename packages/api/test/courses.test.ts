@@ -73,10 +73,38 @@ describe("course loading", () => {
     expect((await h.app.request("/courses/mini/files/resources/..%2fc1%2fquiz-01.yaml")).status).toBe(404);
   });
 
-  it("completing a lesson with a quiz requires a passed quiz; completion is idempotent", async () => {
+  it("a failed quiz attempt does not complete the lesson, but lets the learner continue anyway", async () => {
+    const h = setup();
+    expect((await h.get("/courses/mini/lessons/a1")).json.quiz).toMatchObject({ attempted: false, passed: false, bestPercent: null });
+    const id = (await h.post("/courses/mini/quizzes/qz1/attempts")).json.attemptId as string;
+    await h.post(`/attempts/${id}/answers/mini:a-mcq`, { type: "mcq", selected: [0] });
+    await h.post(`/attempts/${id}/answers/mini:a-short`, { type: "short", text: "wrong" });
+    await h.post(`/attempts/${id}/answers/mini:a-open`, { type: "open", text: "No idea." });
+    await h.post(`/attempts/${id}/finish`);
+    await h.runner(() => ({ score: 0, correct: false, feedback: "Missed it." }));
+    expect((await h.get(`/attempts/${id}`)).json).toMatchObject({ passed: false, provisional: false });
+
+    // finishing below the pass mark leaves the lesson open...
+    const before = (await h.get("/courses/mini/lessons/a1")).json;
+    expect(before.completed).toBe(false);
+    expect(before.quiz).toMatchObject({ attempted: true, passed: false, bestPercent: 0 });
+
+    // ...and "Continue anyway" completes it, with the quiz still on record as not passed
+    expect((await h.post("/courses/mini/lessons/a1/complete")).status).toBe(200);
+    const after = (await h.get("/courses/mini/lessons/a1")).json;
+    expect(after.completed).toBe(true);
+    expect(after.quiz).toMatchObject({ attempted: true, passed: false, bestPercent: 0 });
+    expect((await h.get("/courses/mini")).json.chapters[0].lessons[0].status).toBe("done");
+  });
+
+  it("completing a lesson with a quiz requires a finished attempt; a pass completes it; completion is idempotent", async () => {
     const h = setup();
     expect((await h.post("/courses/mini/lessons/a1/complete")).status).toBe(409);
+    // an unfinished attempt is not enough
+    await h.post("/courses/mini/quizzes/qz1/attempts");
+    expect((await h.post("/courses/mini/lessons/a1/complete")).status).toBe(409);
     await passQuiz1(h);
+    expect((await h.get("/courses/mini/lessons/a1")).json).toMatchObject({ completed: true, quiz: { attempted: true, passed: true, bestPercent: 100 } });
     const r = await h.post("/courses/mini/lessons/a1/complete");
     expect(r.json).toEqual({ completed: true, revision: 1, progress: { done: 1, total: 3, percent: 33 } });
     expect((await h.post("/courses/mini/lessons/a1/complete")).json.progress.done).toBe(1);

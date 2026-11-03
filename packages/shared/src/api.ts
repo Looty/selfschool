@@ -223,7 +223,10 @@ export const lessonSchema = z.object({
   resources: z.array(lessonResourceSchema),
   prev: lessonRefSchema.nullable(),
   next: lessonRefSchema.nullable(),
-  quiz: z.object({ id, title: z.string(), questionCount: z.number().int() }).nullable(),
+  /** `attempted`: a finished attempt exists, which is enough to move on; `passed`/`bestPercent` say how it went. */
+  quiz: z
+    .object({ id, title: z.string(), questionCount: z.number().int(), attempted: z.boolean(), passed: z.boolean(), bestPercent: z.number().nullable() })
+    .nullable(),
   completed: z.boolean(),
   progress: progressSchema,
   /** Contents menu. */

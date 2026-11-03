@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState, type KeyboardEvent } from "react";
 import type { ExamInstance } from "@selfschool/shared";
 import { useNavigate } from "react-router-dom";
 import { useExamInstance, useFinishAttempt, useSubmitAnswer } from "../../api/hooks";
@@ -6,6 +6,7 @@ import { Button, CourseBand, cx } from "../../ui";
 import { AnswerInputs } from "../quiz/AnswerInputs";
 import { FlagIcon } from "../quiz/icons";
 import { CodeBlock, Inline, monoLabel } from "../quiz/inline";
+import { optionShuffler } from "../quiz/optionOrder";
 import { ErrorPage, LoadingPage, Narrow, Notice, Page, errorMessage } from "../quiz/PageState";
 import { isMultiple, selectOption, toInput, typeLabel } from "../quiz/state";
 import { crossedWarning, formatClock, plural, remainingMs, spokenRemaining } from "./display";
@@ -23,7 +24,9 @@ export function ExamTake({ instanceId }: { instanceId: string }) {
 
 function TakeRun({ inst }: { inst: ExamInstance }) {
   const navigate = useNavigate();
-  const qs = inst.questions;
+  // Options are shuffled per sitting, seeded by the attempt so a reload (and its saved drafts) keeps the same order.
+  const shuffle = useMemo(() => optionShuffler(inst.attemptId), [inst.attemptId]);
+  const qs = useMemo(() => inst.questions.map(shuffle.question), [inst.questions, shuffle]);
   const total = qs.length;
   const [s, dispatch] = useReducer(takeReducer, inst.id, (id) => loadTake(id));
   const submitAnswer = useSubmitAnswer();
@@ -56,7 +59,7 @@ function TakeRun({ inst }: { inst: ExamInstance }) {
     try {
       await Promise.all(
         dirty.map(async (d) => {
-          const body = toInput(d, draftOf(s, d))!;
+          const body = shuffle.input(d, toInput(d, draftOf(s, d))!);
           await submitAnswer.mutateAsync({ params: { attemptId: inst.attemptId, questionId: d.id }, body });
           dispatch({ type: "saved", qid: d.id, key: inputKey(d, draftOf(s, d)) });
         }),

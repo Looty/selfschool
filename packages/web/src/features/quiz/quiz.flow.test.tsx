@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes, useParams } from "react-router-dom";
 import { routeDef } from "@selfschool/shared";
 
 // Route the typed client to the in-memory mock so the real hooks run end to end.
@@ -28,10 +28,16 @@ function renderQuiz() {
       <MemoryRouter initialEntries={["/courses/typescript-fundamentals/quizzes/q06"]}>
         <Routes>
           <Route path="/courses/:courseId/quizzes/:quizId" element={<QuizFeature />} />
+          <Route path="/courses/:courseId/lessons/:lessonId" element={<LessonStub />} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
+}
+
+function LessonStub() {
+  const { lessonId } = useParams();
+  return <p>lesson page {lessonId}</p>;
 }
 
 beforeEach(() => {
@@ -94,6 +100,14 @@ describe("quiz page against the mock api", () => {
     expect(await screen.findByRole("heading", { name: "Result" })).toBeTruthy();
     expect(screen.getByRole("link", { name: /Attempt 1/ })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Retake quiz" })).toBeTruthy();
+
+    // below the pass mark: no forced retake, "Continue anyway" completes the lesson and moves on
+    expect(screen.queryByRole("link", { name: /^Continue to/ })).toBeNull();
+    await user.click(await screen.findByRole("button", { name: "Continue anyway" }));
+    expect(await screen.findByText("lesson page l07")).toBeTruthy();
+    const { mockTransport } = await import("../../api/mock");
+    const l06 = (await mockTransport("lesson", { params: { courseId: "typescript-fundamentals", lessonId: "l06" } })) as { completed: boolean; quiz: { passed: boolean; attempted: boolean } };
+    expect(l06).toMatchObject({ completed: true, quiz: { attempted: true, passed: false } });
   }, 30_000);
 
   it("shows a retryable error when the quiz does not load", async () => {

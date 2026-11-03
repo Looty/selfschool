@@ -172,3 +172,37 @@ describe("lesson resources", () => {
     expect(screen.getByText("other.py").closest("a")).toBeNull();
   });
 });
+
+describe("lesson quiz gate", () => {
+  const withQuiz = (quiz: { attempted: boolean; passed: boolean; bestPercent: number | null }, completed = false) =>
+    ({ ...lesson, resources: [], next: { id: "l05", title: "Next one" }, quiz: { id: "q04", title: "Quiz", questionCount: 3, ...quiz }, completed }) as unknown as Lesson;
+
+  it("locks the next lesson until the quiz is taken once", () => {
+    renderArticle(withQuiz({ attempted: false, passed: false, bestPercent: null }));
+    expect(screen.getByText("Take it to unlock the next lesson")).toBeTruthy();
+    expect(screen.getByText("Next · locked")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Take the quiz" })).toBeTruthy();
+  });
+
+  it("after a failed attempt, says so and lets the reader move on", () => {
+    const onNext = vi.fn();
+    render(
+      <MemoryRouter>
+        <LabProvider courseId="c" resources={[]}>
+          <Article lesson={withQuiz({ attempted: true, passed: false, bestPercent: 54.5 })} fontFamily="serif" onAsk={() => {}} onComplete={() => {}} onNext={onNext} completing={false} />
+        </LabProvider>
+      </MemoryRouter>,
+    );
+    expect(screen.getByText("Not passed yet (best 55%): retake it now or later")).toBeTruthy();
+    expect(screen.queryByText("Next · locked")).toBeNull();
+    expect(screen.getByRole("link", { name: "Retake quiz" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Next one/ }));
+    expect(onNext).toHaveBeenCalledOnce();
+  });
+
+  it("a lesson completed past a failed quiz keeps showing it was not passed", () => {
+    renderArticle(withQuiz({ attempted: true, passed: false, bestPercent: 40 }, true));
+    expect(screen.getByText("Not passed yet (best 40%): retake it now or later")).toBeTruthy();
+    expect(screen.queryByText(/^Passed/)).toBeNull();
+  });
+});

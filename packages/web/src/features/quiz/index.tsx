@@ -1,12 +1,13 @@
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useState } from "react";
 import type { AttemptResult, LearnerQuiz } from "@selfschool/shared";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import type { SelfMark } from "@selfschool/shared";
-import { useApiQuery, useAttempt, useFinishAttempt, useLesson, useQuiz, useSelfMarkAnswer, useStartQuizAttempt, useSubmitAnswer } from "../../api/hooks";
+import { useApiQuery, useAttempt, useCompleteLesson, useFinishAttempt, useLesson, useQuiz, useSelfMarkAnswer, useStartQuizAttempt, useSubmitAnswer } from "../../api/hooks";
 import { LanguageSwitch } from "../../components/LanguageSwitch";
 import { CourseBand } from "../../ui";
 import { ErrorPage, LoadingPage, Narrow, Notice, Page, errorMessage } from "./PageState";
 import { QuestionPanel } from "./QuestionPanel";
+import { newSeed, optionShuffler } from "./optionOrder";
 import { QuizResults } from "./Results";
 import { EMPTY_DRAFT, initialRunner, mergeResult, runnerReducer, stageOf, toInput } from "./state";
 
@@ -37,7 +38,10 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
   const finish = useFinishAttempt();
   const attempt = useAttempt(attemptId);
 
-  const questions = quiz.questions;
+  // Options are shuffled per run (a retake remounts this with a new seed); the api still speaks authored order.
+  const [seed] = useState(newSeed);
+  const shuffle = useMemo(() => optionShuffler(seed), [seed]);
+  const questions = useMemo(() => quiz.questions.map(shuffle.question), [quiz.questions, shuffle]);
   const total = questions.length;
   const q = questions[Math.min(s.index, total - 1)]!;
   const lessonHref = `/courses/${courseId}/lessons/${quiz.lesson.id}`;
@@ -54,8 +58,8 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
         id = (await start.mutateAsync({ params: { courseId, quizId: quiz.quiz.id } })).attemptId;
         setAttemptId(id);
       }
-      const result = await submit.mutateAsync({ params: { attemptId: id, questionId: q.id }, body: input });
-      dispatch({ type: "checked", qid: q.id, result });
+      const result = await submit.mutateAsync({ params: { attemptId: id, questionId: q.id }, body: shuffle.input(q, input) });
+      dispatch({ type: "checked", qid: q.id, result: shuffle.result(q, result) });
     } catch (e) {
       dispatch({ type: "failed", message: errorMessage(e) });
     }
@@ -65,7 +69,7 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
     if (!attemptId || selfMark.isPending) return;
     try {
       const result = await selfMark.mutateAsync({ params: { attemptId, questionId: q.id }, body: { mark } });
-      dispatch({ type: "checked", qid: q.id, result });
+      dispatch({ type: "checked", qid: q.id, result: shuffle.result(q, result) });
     } catch (e) {
       dispatch({ type: "failed", message: errorMessage(e) });
     }
@@ -89,6 +93,17 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
   }, [finalResult, refetchLesson]);
   const nextHref = lesson.data?.completed && lesson.data.next ? `/courses/${courseId}/lessons/${lesson.data.next.id}` : undefined;
   const nextTitle = lesson.data?.next?.title;
+  // Below the pass mark: the learner may still move on. Wait for the refetch so a pass does not flash this button.
+  const complete = useCompleteLesson();
+  const navigate = useNavigate();
+  const canContinueAnyway = Boolean(lesson.data && !lesson.data.completed && !lesson.isFetching);
+  const continueAnyway = () => {
+    const next = lesson.data?.next;
+    complete.mutate(
+      { params: { courseId, lessonId: quiz.lesson.id } },
+      { onSuccess: () => navigate(next ? `/courses/${courseId}/lessons/${next.id}` : `/courses/${courseId}`) },
+    );
+  };
 
   const done = finalResult ?? null;
   const view = done ? (attempt.data?.finishedAt ? attempt.data : done) : null;
@@ -110,14 +125,24 @@ function QuizRun({ quiz, courseId, onRetake }: { quiz: LearnerQuiz; courseId: st
           }
         />
         <Narrow width={720} language={view.language}>
-          <QuizResults attempt={view} lessonHref={lessonHref} nextHref={nextHref} nextTitle={nextTitle} maxAttempts={quiz.quiz.maxAttempts} onRetake={onRetake} />
+          <QuizResults
+            attempt={view}
+            lessonHref={lessonHref}
+            nextHref={nextHref}
+            nextTitle={nextTitle}
+            maxAttempts={quiz.quiz.maxAttempts}
+            onRetake={onRetake}
+            onContinueAnyway={canContinueAnyway ? continueAnyway : undefined}
+            continuing={complete.isPending}
+            continueError={complete.isError ? errorMessage(complete.error) : null}
+          />
         </Narrow>
       </Page>
     );
   }
 
   const number = attempt.data?.number ?? plannedNumber;
-  const result = mergeResult(s.results[q.id], attempt.data?.answers.find((a) => a.questionId === q.id));
+  const result = mergeResult(s.results[q.id], shuffle.result(q, attempt.data?.answers.find((a) => a.questionId === q.id)));
 
   return (
     <Page>
