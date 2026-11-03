@@ -10,7 +10,7 @@ import type {
   Progress,
 } from "@selfschool/shared";
 import { quizMinutes, type TranslationManifest } from "@selfschool/shared";
-import { attemptHistory, awardXp, learnerQuestion, quizGateCleared, type SnapQ } from "./attempts.js";
+import { attemptHistory, awardXp, learnerQuestion, quizStanding, type SnapQ } from "./attempts.js";
 import { questionKey, type LightLesson, type LoadedCourse, type LoadedLesson } from "./catalog.js";
 import { answerCount } from "./chat.js";
 import { getCourse, loadCourses, type Ctx } from "./ctx.js";
@@ -221,8 +221,9 @@ export function lessonView(ctx: Ctx, courseId: string, lessonId: string, lang?: 
   const quizTitle = quiz ? quizIn(t, quiz.quiz).title : "";
   const ref = (x: LoadedLesson) => (x.id === l.id && tl ? { id: x.id, title: tl.title } : localizeRef(lessonRef(x), titles, "lessons"));
   const exam = course.exams.find((e) => e.after === l.chapterDir);
+  const standing = quiz ? quizStanding(ctx, course.id, quiz.quiz.id) : null;
   // Heal attempts finished before the gate counted provisional scores.
-  if (l.quizId && !completionMap(ctx, course.id).has(l.id) && quizGateCleared(ctx, course.id, l.quizId)) completeLesson(ctx, course.id, l.id);
+  if (standing?.passed && !completionMap(ctx, course.id).has(l.id)) completeLesson(ctx, course.id, l.id);
   return {
     course: titles?.title ? { ...course.ref, title: titles.title } : course.ref,
     chapterTitle: titles?.chapters[l.chapterDir] ?? l.chapterTitle,
@@ -242,7 +243,7 @@ export function lessonView(ctx: Ctx, courseId: string, lessonId: string, lang?: 
     resources: l.resources,
     prev: course.lessons[l.index - 1] ? ref(course.lessons[l.index - 1]!) : null,
     next: course.lessons[l.index + 1] ? ref(course.lessons[l.index + 1]!) : null,
-    quiz: quiz ? { id: quiz.quiz.id, title: quizTitle, questionCount: quiz.quiz.questions.length } : null,
+    quiz: quiz ? { id: quiz.quiz.id, title: quizTitle, questionCount: quiz.quiz.questions.length, ...standing! } : null,
     completed: completionMap(ctx, course.id).has(l.id),
     progress: progressOf(ctx, course),
     chapters: localizeOutline(ctx, course, outline(ctx, course), titles),
@@ -257,8 +258,9 @@ export function lessonView(ctx: Ctx, courseId: string, lessonId: string, lang?: 
 export function completeLesson(ctx: Ctx, courseId: string, lessonId: string) {
   const course = getCourse(ctx, courseId);
   const l = findLesson(course, lessonId);
-  if (l.quizId) {
-    if (!quizGateCleared(ctx, course.id, l.quizId)) throw new HttpError(409, "pass the lesson quiz before completing the lesson");
+  // A lesson quiz must be taken once; a score below the pass mark does not block moving on ("Continue anyway").
+  if (l.quizId && !quizStanding(ctx, course.id, l.quizId).attempted) {
+    throw new HttpError(409, "take the lesson quiz before completing the lesson");
   }
   const revision = latestRevisions(ctx, course.id).get(l.id) ?? 1;
   const existing = completionMap(ctx, course.id).get(l.id);

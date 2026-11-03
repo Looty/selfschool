@@ -70,6 +70,19 @@ function examRows(db: MockDb): ExamRow[] {
   });
 }
 
+/** The l06 quiz as the lesson view reports it (mirrors `quizStanding` in the api). */
+function quizStanding(db: MockDb) {
+  const scores = [...db.attempts.values()]
+    .filter((a) => a.kind === "quiz" && a.targetId === QUIZ.id && a.finishedAt !== null)
+    .map((a) => attemptView(db, a).score.percent);
+  const known = scores.filter((p): p is number => p !== null);
+  return {
+    attempted: scores.length > 0,
+    passed: known.some((p) => p >= QUIZ.passingPercentage),
+    bestPercent: known.length ? Math.max(...known) : null,
+  };
+}
+
 const PRACTICE_PER_LESSON = 6; // one 4-question quiz
 
 function tsTime(db: MockDb): CourseTime {
@@ -345,7 +358,7 @@ export const handlers: Handlers = {
       revision: l.revision, minutes: l.minutes, level: 1, origin: "researched" as const, ...body, sources: SOURCES,
       resources: [{ name: "narrowing-cheatsheet.md", url: "/api/resources/narrowing-cheatsheet.md" }],
       prev: prev ? lessonRef(prev) : null, next: next ? lessonRef(next) : null,
-      quiz: params.lessonId === "l06" ? { id: QUIZ.id, title: QUIZ.title, questionCount: QUIZ_QUESTION_IDS.length } : null,
+      quiz: params.lessonId === "l06" ? { id: QUIZ.id, title: QUIZ.title, questionCount: QUIZ_QUESTION_IDS.length, ...quizStanding(db) } : null,
       completed: db.completed.has(params.lessonId), progress: progressOf(db), chapters,
       exam: exam ? (examRows(db).find((r) => r.id === exam.id) ?? null) : null,
       ai: { available: db.aiAvailable() },
@@ -467,7 +480,10 @@ export const handlers: Handlers = {
   finishAttempt: ({ params }, db) => {
     const att = getAttempt(db, params.attemptId);
     att.finishedAt ??= Date.now();
-    return attemptView(db, att);
+    const view = attemptView(db, att);
+    // like the api: clearing the pass mark completes the lesson; a lower score leaves it to "Continue anyway"
+    if (att.kind === "quiz" && att.targetId === QUIZ.id && (view.score.percent ?? 0) >= QUIZ.passingPercentage) db.completed.add("l06");
+    return view;
   },
 
   reportQuestion: ({ params }, db) => {

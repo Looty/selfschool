@@ -60,7 +60,7 @@ export function LessonBand({ lesson }: { lesson: Lesson }) {
               courseId={lesson.course.id}
               to={lesson.next}
               label="Next lesson"
-              gate={lesson.quiz && !lesson.completed ? { href: `/courses/${lesson.course.id}/quizzes/${lesson.quiz.id}`, hint: "take the quiz first" } : undefined}
+              gate={lesson.quiz && !lesson.completed && !lesson.quiz.attempted ? { href: `/courses/${lesson.course.id}/quizzes/${lesson.quiz.id}`, hint: "take the quiz first" } : undefined}
             >
               <ChevronRight />
             </Step>

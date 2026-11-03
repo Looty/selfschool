@@ -377,14 +377,20 @@ export function listAttempts(ctx: Ctx, packageId: string, kind: "quiz" | "exam",
 }
 
 /**
- * A finished quiz attempt clears the lesson gate when the answers scored so far meet the pass mark, even
- * while AI-graded answers are still pending, so an offline runner never traps the learner on a lesson.
+ * How the learner stands on a lesson quiz. Any finished attempt, whatever the score, lets the lesson complete
+ * ("Continue anyway"); `passed` and `bestPercent` keep the result honest on the lesson page. `passed` counts the
+ * answers scored so far, also while AI-graded ones are pending, so an offline runner never holds back a pass.
  */
-export function quizGateCleared(ctx: Ctx, packageId: string, quizId: string): boolean {
-  return listAttempts(ctx, packageId, "quiz", quizId).some((a) => {
-    const s = summarize(a);
-    return a.row.finishedAt !== null && s.percent !== null && s.percent >= a.passing;
-  });
+export function quizStanding(ctx: Ctx, packageId: string, quizId: string) {
+  const finished = listAttempts(ctx, packageId, "quiz", quizId)
+    .filter((a) => a.row.finishedAt !== null)
+    .map((a) => ({ percent: summarize(a).percent, passing: a.passing }));
+  const scores = finished.flatMap((f) => (f.percent === null ? [] : [f.percent]));
+  return {
+    attempted: finished.length > 0,
+    passed: finished.some((f) => f.percent !== null && f.percent >= f.passing),
+    bestPercent: scores.length ? Math.max(...scores) : null,
+  };
 }
 
 export function attemptHistory(ctx: Ctx, packageId: string, kind: "quiz" | "exam", targetId: string) {

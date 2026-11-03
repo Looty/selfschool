@@ -19,6 +19,15 @@ import { SelectionMenu } from "./SelectionMenu";
 const monoLabel = "font-mono text-[11px] font-medium uppercase tracking-[0.08em]";
 const pagerCard = "flex min-w-0 flex-col gap-1 rounded-card border border-border px-5 py-4 text-text no-underline";
 
+/** The quiz card's line: taken or not, and how it went. A score below the pass mark is said plainly, not hidden. */
+export function quizStatus(quiz: Lesson["quiz"], locked: boolean): string {
+  if (!quiz || locked) return "Take it to unlock the next lesson";
+  if (quiz.passed) return "Passed: the next lesson is open";
+  if (!quiz.attempted) return "Not taken yet: the next lesson is open";
+  const best = quiz.bestPercent === null ? "" : ` (best ${Math.round(quiz.bestPercent)}%)`;
+  return `Not passed yet${best}: retake it now or later`;
+}
+
 /**
  * A printed-book sidebar, clearly apart from the running text: UI sans at a smaller size under a bold
  * title, on a panel of its own. "In brief" is the inverted (ink) panel; the caution note is warm-tinted.
@@ -94,7 +103,8 @@ export function Article({
   );
   const courseId = lesson.course.id;
   const navigate = useNavigate();
-  const locked = Boolean(lesson.quiz) && !lesson.completed;
+  // Taking the quiz once opens the next lesson; passing it is the goal, not a wall.
+  const locked = Boolean(lesson.quiz) && !lesson.completed && !lesson.quiz?.attempted;
   // the lab: the lesson's scripts (not the helpers they import). Its card is the one place to run or edit them; the
   // lesson text only links the files for download
   const lab = useLab();
@@ -138,16 +148,16 @@ export function Article({
       </div>
       <SelectionMenu containerRef={prose} onAsk={onAsk} />
 
-      {/* A lesson with a quiz is a gate: the quiz comes before the next lesson until it is passed. */}
+      {/* A lesson with a quiz is a gate: the quiz comes before the next lesson until it is taken once. */}
       <nav aria-label="Lesson navigation" className="mt-10 flex flex-col gap-3">
         {lesson.quiz ? (
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-card border border-border bg-surface px-5 py-4">
             <div className="flex min-w-0 flex-col gap-0.5">
               <span className={`${monoLabel} font-normal text-text3`}>Quiz · {lesson.quiz.questionCount} {lesson.quiz.questionCount === 1 ? "question" : "questions"}</span>
-              <span className="text-[15px] font-medium">{locked ? "Pass it to unlock the next lesson" : "Passed: the next lesson is open"}</span>
+              <span className="text-[15px] font-medium">{quizStatus(lesson.quiz, locked)}</span>
             </div>
             <Button variant={locked ? "primary" : "secondary"} to={`/courses/${courseId}/quizzes/${lesson.quiz.id}`}>
-              {locked ? "Take the quiz" : "Retake quiz"}
+              {lesson.quiz.attempted ? "Retake quiz" : "Take the quiz"}
             </Button>
           </div>
         ) : null}
