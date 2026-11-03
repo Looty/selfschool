@@ -229,8 +229,8 @@ export function ImportDialog({ source, onClose }: { source: ImportSource; onClos
 
 // ---------- several courses in one repository ----------
 
-/** A course that can be ticked: it validates and its id is free or comes from this same repository. */
-const importable = (c: CourseChoice) => c.ok && c.conflict !== "clash";
+/** A course that can be ticked: it validates (or was not checked yet; the import checks it) and its id is free or comes from this same repository. */
+const importable = (c: CourseChoice) => c.ok !== false && c.conflict !== "clash";
 
 function ChoiceList({
   choices,
@@ -256,7 +256,7 @@ function ChoiceList({
   const state = (c: CourseChoice) => {
     const r = results?.find((x) => x.path === c.path);
     if (r) return r.error ? { text: r.error, tone: "bad" as const } : { text: "Added", tone: "ok" as const };
-    if (!c.ok) return { text: "Does not validate", tone: "bad" as const };
+    if (c.ok === false) return { text: "Does not validate", tone: "bad" as const };
     if (c.conflict === "clash") return { text: "Already installed from another source", tone: "muted" as const };
     if (c.conflict === "update") return { text: "Installed; import replaces it", tone: "muted" as const };
     return { text: "New", tone: "ok" as const };

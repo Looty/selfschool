@@ -693,8 +693,11 @@ export const courseChoiceSchema = z.object({
   title: z.string(),
   level: z.string(),
   lessonCount: z.number(),
-  /** False when the folder does not validate; it cannot be imported. */
-  ok: z.boolean(),
+  /**
+   * False when the folder does not validate; it cannot be imported. Null when it was not checked yet (a GitHub
+   * repo is listed from each course.yaml, without downloading every course); importing it validates it.
+   */
+  ok: z.boolean().nullable(),
   /** `update` = installed from this same repo (import replaces it); `clash` = the id belongs to another source. */
   conflict: z.enum(["none", "update", "clash"]),
 });
