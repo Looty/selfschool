@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { packages } from "../src/db/schema.js";
 import type { GitRunner } from "../src/ctx.js";
 import { forgetGithubSnapshot, withGithub } from "../src/githubGit.js";
-import { validateGitUrl, validateRef, validateSubpath } from "../src/packages.js";
+import { normalizePackageUrl, validateGitUrl, validateRef, validateSubpath } from "../src/packages.js";
 import { fixtureDir, setup } from "./helpers.js";
 
 describe("settings", () => {
@@ -114,6 +114,9 @@ describe("packages", () => {
     // adding the same repo again updates in place; a different origin with the same id conflicts
     expect((await h.post("/packages", { url: "https://github.com/friend/courses.git", path: "pkg/mini", ref: "v1" })).status).toBe(200);
     expect((await h.post("/packages", { url: "https://github.com/other/courses.git", path: "pkg/mini", ref: "v1" })).status).toBe(409);
+    // the URL without https:// (as copied from an older Settings row) is the same source, not an error
+    expect((await h.post("/packages", { url: "github.com/friend/courses.git/", path: "pkg/mini", ref: "v1" })).status).toBe(200);
+    expect(calls.at(-2)!.at(-2)).toBe("https://github.com/friend/courses.git");
   });
 
   describe("a GitHub repo of several courses", () => {
@@ -254,6 +257,13 @@ describe("packages", () => {
 
   it("unit: validators", () => {
     expect(validateGitUrl("https://github.com/a/b.git#frag")).toBe("https://github.com/a/b.git");
+    expect(normalizePackageUrl(" github.com/Looty/selfschool-courses/ ")).toBe("https://github.com/Looty/selfschool-courses");
+    expect(normalizePackageUrl("https://github.com/a/b/")).toBe("https://github.com/a/b");
+    expect(normalizePackageUrl("git.example.org:8443/a/b")).toBe("https://git.example.org:8443/a/b");
+    expect(normalizePackageUrl("http://github.com/a/b")).toBe("http://github.com/a/b");
+    expect(normalizePackageUrl("relative/folder")).toBe("relative/folder");
+    expect(normalizePackageUrl("C:\\courses\\x")).toBe("C:\\courses\\x");
+    expect(normalizePackageUrl("/abs/folder/")).toBe("/abs/folder/");
     expect(validateRef("feature/x-1.2")).toBe("feature/x-1.2");
     expect(() => validateRef("")).toThrow();
     expect(validateSubpath("")).toBe("");

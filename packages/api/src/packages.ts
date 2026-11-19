@@ -58,6 +58,17 @@ export function listPackages(ctx: Ctx): PackageInfo[] {
 const PRIVATE_HOST = /^(localhost|.*\.localhost|.*\.local|.*\.internal)$/i;
 const PRIVATE_IPV4 = /^(0\.|10\.|127\.|169\.254\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/;
 
+/**
+ * What a user typed into Repository URL, made into the URL the import expects: `github.com/a/b/` (no scheme, as the
+ * Settings row used to show it) -> `https://github.com/a/b`. Trailing slashes go so the same repo always compares
+ * equal. Local folders and anything else pass through for `fetchPackage` to judge.
+ */
+export function normalizePackageUrl(raw: string): string {
+  const url = raw.trim();
+  const withScheme = /^[a-z0-9-]+(\.[a-z0-9-]+)+(:\d+)?(\/|$)/i.test(url) ? `https://${url}` : url;
+  return /^https:\/\/[^/]+\/./i.test(withScheme) ? withScheme.replace(/\/+$/, "") : withScheme;
+}
+
 /** Only plain https URLs without credentials to public-looking hosts. */
 export function validateGitUrl(raw: string): string {
   if (raw.length > 500 || /[\s\u0000-\u001f]/.test(raw)) throw new HttpError(400, "invalid package URL");
@@ -269,8 +280,8 @@ async function peekChoices(ctx: Ctx, body: { url: string; path: string; ref: str
  * Adds a course package from a repo or local folder. The package is validated before it is moved into the
  * courses directory.
  */
-export async function addPackage(ctx: Ctx, body: { url: string; path: string; ref: string }): Promise<PackageInfo> {
-  const f = await fetchPackage(ctx, body);
+export async function addPackage(ctx: Ctx, input: { url: string; path: string; ref: string }): Promise<PackageInfo> {
+  const f = await fetchPackage(ctx, { ...input, url: normalizePackageUrl(input.url) });
   try {
     const hint = missingCourseHint(ctx, f.pkgDir, f.url, f.path);
     if (hint) throw new HttpError(422, hint.choices.length ? `no course.yaml here; set Path to one of: ${hint.choices.map((c) => c.path).join(", ")}` : hint.message);
@@ -281,7 +292,8 @@ export async function addPackage(ctx: Ctx, body: { url: string; path: string; re
 }
 
 /** Dry run of `addPackage` for the add popup: same fetch, same checks, nothing installed. */
-export async function previewPackage(ctx: Ctx, body: { url: string; path: string; ref: string }): Promise<PackagePreview> {
+export async function previewPackage(ctx: Ctx, input: { url: string; path: string; ref: string }): Promise<PackagePreview> {
+  const body = { ...input, url: normalizePackageUrl(input.url) };
   const empty = { fileName: body.url.replace(/^https:\/\//, "").slice(0, 120), sizeBytes: 0, fileCount: 0, issues: [], conflict: "none" as const, course: null };
   let f: FetchedPackage;
   try {

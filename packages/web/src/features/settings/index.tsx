@@ -373,7 +373,7 @@ function PackageRow({ pkg, onRemove, onReview }: { pkg: PackageInfo; onRemove: (
           {pkg.course.title}
         </Link>
         <div className="mt-0.5 break-all font-mono text-xs text-text3">
-          {pkg.url.replace(/^https?:\/\//, "")}
+          {pkg.url}
           {pkg.path ? `/${pkg.path}` : ""} @ {pkg.ref} · {shortSha(pkg.sha)}
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-text3">
@@ -546,7 +546,7 @@ export function AddPackageForm({ onCheck, initialUrl = "" }: { onCheck: (body: {
       <div className="flex flex-wrap gap-3">
         <label className="flex min-w-[240px] flex-[3_1_240px] flex-col gap-1 text-[13px] text-text2">
           Repository URL
-          <input className={input} value={form.url} onChange={set("url")} placeholder="github.com/you/course-package" autoFocus aria-invalid={error ? true : undefined} aria-describedby={error ? "pkg-error" : undefined} />
+          <input className={input} value={form.url} onChange={set("url")} placeholder="https://github.com/you/course-package" autoFocus aria-invalid={error ? true : undefined} aria-describedby={error ? "pkg-error" : undefined} />
         </label>
         <label className="flex min-w-[140px] flex-[1_1_140px] flex-col gap-1 text-[13px] text-text2">
           Path
