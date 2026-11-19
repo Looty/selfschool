@@ -46,7 +46,7 @@ export function ImportDialog({ source, onClose }: { source: ImportSource; onClos
         : previewRepo(source.body, ctl.signal);
     run.then(
       (preview) => {
-        setSelected(new Set((preview.choices ?? []).filter(importable).map((c) => c.path)));
+        setSelected(new Set()); // a repo of several courses starts with none ticked: the learner picks what they want
         setPhase({ name: "ready", preview });
       },
       (e: unknown) => {
