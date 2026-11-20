@@ -1,18 +1,21 @@
 import type { ReactNode } from "react";
 import { CodeBlock as SharedCodeBlock } from "../../components/code/CodeBlock";
 import { cx } from "../../ui";
+import { splitCode } from "./autocode";
 import type { Pill } from "./state";
 
-/** Question text and explanations use `backticks` for inline code. */
+const code = (key: string, text: string) => (
+  <code key={key} className="font-mono text-[0.9em]">
+    {text}
+  </code>
+);
+
+/** Question text and explanations use `backticks` for inline code; code written without them is found by `splitCode`. */
 export function Inline({ text }: { text: string }): ReactNode {
-  return text.split(/(`[^`]+`)/g).map((part, i) =>
-    part.startsWith("`") && part.endsWith("`") && part.length > 2 ? (
-      <code key={i} className="font-mono text-[0.9em]">
-        {part.slice(1, -1)}
-      </code>
-    ) : (
-      part
-    ),
+  return text.split(/(`[^`]+`)/g).flatMap((part, i) =>
+    part.startsWith("`") && part.endsWith("`") && part.length > 2
+      ? [code(`${i}`, part.slice(1, -1))]
+      : splitCode(part).map((seg, j) => (seg.code ? code(`${i}.${j}`, seg.text) : seg.text)),
   );
 }
 
