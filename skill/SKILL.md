@@ -122,7 +122,7 @@ The first paragraph of a lesson is shown as its intro: one or two plain sentence
 For each lesson, in this order:
 1. Look at the sources you fetched for it and note the facts you will use.
 2. Write the lesson from `templates/lesson.md` following "Teaching method" below, citing `[n]` after each factual sentence.
-3. Write its quiz from `templates/quiz.yaml` (and `templates/question-types.yaml` for any non-`mcq` question), then the lesson's "If you missed a quiz question" table.
+3. Write its quiz from `templates/quiz.yaml` (and `templates/question-types.yaml` for any non-`mcq` question), then the lesson's "If you missed a quiz question" section.
 4. Re-read both files against the rules below before moving on.
 
 #### Prerequisites (never use a word before it is taught)
@@ -139,7 +139,7 @@ Learners understand faster from many tiny worked examples than from dense explan
 1. **Rule.** One plain sentence, built on a concrete mental model, not an abstract one. "`bisect_left(a, x)` is how many items are smaller than `x`" beats "the gap where `x` would go". "An iterator is a conveyor belt: each item comes off once and is gone" beats "lazy evaluation".
 2. **Example ladder.** 3 to 6 examples, tiniest first: inputs of 3 to 6 items, small numbers. Show the state in between, as inline comments or a small table (what is left, the running value). At least one rung is an edge case: empty input, a value larger than everything, ties or duplicates.
 3. **Contrast.** When a neighbouring tool is easy to confuse with this one, put both side by side on the same input, in a small table with the results (for example `product`, `permutations`, `combinations` and `pairwise` on `"abc"`, with counts). Skip this step when there is no confusable neighbour.
-4. **Prediction question.** One question the learner answers by reasoning alone, never "run this". Number it (P1, P2, ...). The app has no collapsible block, so never put the answer under the question: answer every prediction question in a `## Answers` section near the end of the lesson, with a one- or two-line reason each.
+4. **Prediction question.** One question the learner answers by reasoning alone, never "run this". Number it (P1, P2, ...). Put the answer, with a one- or two-line reason, in an `:::answer` block right under the question. The app shows the block closed, behind a "Show answer" button, so the learner commits to an answer before seeing it.
 
 After the last concept, add a `## Cheat sheet` table with the columns tool | one-line rule | tiny example → result.
 
@@ -156,7 +156,7 @@ After the last concept, add a `## Cheat sheet` table with the columns tool | one
 **Quiz and "If you missed".** Each lesson's quiz is 8 to 12 basic `mcq` questions mixed across the lesson's concepts, each solvable with the rules the lesson taught.
 - Every distractor targets one specific, realistic misconception, for example an off-by-one on an exclusive stop, returning an index instead of a count, forgetting the initial value in `reduce`, mixing up `combinations` and `pairwise`, or believing a cache saves memory. The wrong option's `explanation` names that misconception.
 - Every question ends its `text` with a hint line, `Hint: ...`, that nudges without giving the answer away.
-- Close the lesson, after `## Answers` and before `:::key-takeaways`, with an `## If you missed a quiz question` section. It is a table of misconception | concept to reread | one re-check question. The re-check answers go in `## Answers` too.
+- Close the lesson, after the cheat sheet and before `:::key-takeaways`, with an `## If you missed a quiz question` section: one short entry per misconception, naming it, the concept section to reread, and one re-check question (R1, R2, ...) followed by its own `:::answer` block.
 
 A worked concept block to imitate (a real lesson also cites its sources with `[n]`):
 
@@ -185,9 +185,11 @@ bisect_left([], 5)     # 0: an empty list has nothing smaller
 | right minus left | how many 3s | 2 |
 
 **P1.** What is `bisect_left([2, 4, 4, 4, 8], 4)`?
-````
 
-and in `## Answers`: "**P1.** 1: only the 2 is smaller than 4; the equal 4s do not count."
+:::answer
+1: only the 2 is smaller than 4; the equal 4s do not count.
+:::
+````
 
 #### Practical files
 
@@ -261,7 +263,7 @@ Run `school validate courses/<id>` and fix every error until it exits clean. Wit
 - [ ] Every image has alt text, every relative link resolves, every `hotspot` image exists
 - [ ] Exam domain weights sum to 100, and each domain's chapters exist
 - [ ] Every lesson ends with a `:::glossary`; no lesson uses a term taught only later without a forward note
-- [ ] Every concept has a rule, an example ladder with an edge case and a prediction question; every prediction and re-check question is answered in `## Answers`, not under the question; the lesson has a `## Cheat sheet` and an `## If you missed a quiz question` table
+- [ ] Every concept has a rule, an example ladder with an edge case and a prediction question; every prediction and re-check question is followed by its `:::answer` block; the lesson has a `## Cheat sheet` and an `## If you missed a quiz question` section
 - [ ] Every quiz has 8 to 12 `mcq` questions, each ending with a `Hint:` line, and every wrong option's explanation names the misconception it targets
 - [ ] Every lab/capstone lesson lists runnable `resources` that you ran, and says what the learner should see
 

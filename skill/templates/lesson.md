@@ -24,7 +24,11 @@ One block per concept (see "Teaching method" in SKILL.md): rule, example ladder,
 
 **Contrast:** a small table putting this concept next to the neighbour it is confused with, on the same input (skip if there is none).
 
-**P1.** A question answered by reasoning alone. The answer goes in "Answers" below, never here.
+**P1.** A question answered by reasoning alone.
+
+:::answer
+The answer, and why in one or two lines. The app shows this closed, behind "Show answer".
+:::
 
 ## Cheat sheet
 
@@ -32,17 +36,13 @@ One block per concept (see "Teaching method" in SKILL.md): rule, example ladder,
 | --- | --- | --- |
 | `name` | one line | `call` → `result` |
 
-## Answers
-
-**P1.** The answer, and why in one or two lines.
-
-**R1.** The answer to re-check question R1 from the table below.
-
 ## If you missed a quiz question
 
-| If you thought... | Reread | Re-check |
-| --- | --- | --- |
-| The misconception a distractor targets | The concept section | **R1.** A short question on the same idea |
+**If you thought** the misconception a distractor targets: reread "Concept name". **R1.** A short question on the same idea.
+
+:::answer
+The answer to R1, and why.
+:::
 
 :::low-confidence
 Use this block when a claim is uncertain, version-dependent or from a weak source. Say what is

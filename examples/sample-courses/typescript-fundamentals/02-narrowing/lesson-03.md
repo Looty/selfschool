@@ -80,6 +80,12 @@ function move(pet: Fish | Bird) {
 }
 ```
 
+**P1.** `pet` is `Fish | Bird`. Inside `if (!("swim" in pet)) { ... }`, what type is `pet`?
+
+:::answer
+`Bird`. The `!` swaps the branches, so the block is the false side of `"swim" in pet`, and only `Bird` lacks `swim`.
+:::
+
 :::low-confidence
 How `in` narrows optional properties has changed between TypeScript versions. Check the release notes for your version before you rely on it. [7]
 :::

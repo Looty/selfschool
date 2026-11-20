@@ -49,7 +49,8 @@ tag, in plain everyday words (define each technical term when first used). Teach
 - a small contrast table against any easily confused neighbour;
 - a numbered prediction question (P1, P2, ...) answered by reasoning alone.
 Never name a variable after a data value. After the concepts write a "## Cheat sheet" table (tool | rule | tiny example ->
-result), then "## Answers" with each prediction answer and a one-line reason (never answer under the question). End with a :::key-takeaways block of short
+result). Right under each prediction question put its answer and a one-line reason in an :::answer block (the app shows
+it closed, behind "Show answer"). End with a :::key-takeaways block of short
 bullets, then a :::glossary block of "- **Term**: plain meaning" lines for the jargon used (blocks are closed by a line
 containing only :::).
 "questions" are 8 basic mcq (2-4 options, at least one correct, EVERY option has an explanation) mixed across the
