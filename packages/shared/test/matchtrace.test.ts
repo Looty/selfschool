@@ -45,6 +45,13 @@ describe("trace matching", () => {
     expect(traceMatches("True", "true")).toBe(false);
     expect(traceMatches("", "3")).toBe(false);
   });
+  it("ignores spacing around brackets, commas and colons outside strings", () => {
+    expect(traceMatches("['a','b']", "['a', 'b']")).toBe(true);
+    expect(traceMatches("[ 1 ,2 ]", "[1, 2]")).toBe(true);
+    expect(traceMatches("{'k':1}", "{'k': 1}")).toBe(true);
+    expect(traceMatches("'a,b'", "'a, b'")).toBe(false);
+    expect(traceMatches("['a', 'b']", "['a', 'c']")).toBe(false);
+  });
 });
 
 describe("spot diff flag", () => {
