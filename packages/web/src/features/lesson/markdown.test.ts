@@ -16,6 +16,15 @@ describe("parseBlocks", () => {
     expect(parseBlocks(":::glossary\n- **Drift**: the world changed.\n:::")).toEqual([{ kind: "glossary", text: "- **Drift**: the world changed." }]);
   });
 
+  it("recognises the answer directive, with code inside it", () => {
+    const md = "**P1.** What is `len([])`?\n\n:::answer\n```python\nlen([])  # 0\n```\n:::\n\nNext";
+    expect(parseBlocks(md)).toEqual([
+      { kind: "markdown", text: "**P1.** What is `len([])`?" },
+      { kind: "answer", text: "```python\nlen([])  # 0\n```" },
+      { kind: "markdown", text: "Next" },
+    ]);
+  });
+
   it("ignores directives inside code fences", () => {
     const md = "```md\n:::low-confidence\nnot a callout\n:::\n```";
     expect(parseBlocks(md)).toEqual([{ kind: "markdown", text: md }]);

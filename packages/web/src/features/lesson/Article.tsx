@@ -59,6 +59,18 @@ export function KeyTakeaways({ text, sources }: { text: string; sources: Readonl
   );
 }
 
+/** The answer to a question asked in the text (`:::answer`): closed until the reader chooses to look. */
+export function Answer({ text, sources, glossary, resources }: { text: string; sources: ReadonlySet<number> } & Pick<React.ComponentProps<typeof Markdown>, "glossary" | "resources">) {
+  return (
+    <details className="lesson-answer my-4 rounded-card border border-border px-5 py-3 font-sans text-[calc(15px*var(--prose-scale,1))]">
+      <summary className="cursor-pointer font-medium text-text">Show answer</summary>
+      <div className="mt-2 leading-[1.6] text-text2">
+        <Markdown text={text} sources={sources} glossary={glossary} resources={resources} />
+      </div>
+    </details>
+  );
+}
+
 /** Glossary terms that never appear in the prose (so nothing in the text carries their meaning): a native collapsible list. */
 export function UnusedTerms({ terms }: { terms: ReadonlyArray<{ term: string; meaning: string }> }) {
   if (terms.length === 0) return null;
@@ -98,7 +110,7 @@ export function Article({
   const lines = useMemo(() => blocks.filter((b) => b.kind === "glossary").flatMap((b) => parseGlossary(b.text)), [blocks]);
   const glossary = useMemo(() => glossaryEntries(lines), [lines]);
   const unused = useMemo(
-    () => unmatchedLines(lines, [lesson.standfirst, ...blocks.filter((b) => b.kind === "markdown").map((b) => b.text)].join("\n")),
+    () => unmatchedLines(lines, [lesson.standfirst, ...blocks.filter((b) => b.kind === "markdown" || b.kind === "answer").map((b) => b.text)].join("\n")),
     [lines, blocks, lesson.standfirst],
   );
   const courseId = lesson.course.id;
@@ -140,6 +152,8 @@ export function Article({
             <LowConfidence key={i} text={b.text} sources={known} />
           ) : b.kind === "key-takeaways" ? (
             <KeyTakeaways key={i} text={b.text} sources={known} />
+          ) : b.kind === "answer" ? (
+            <Answer key={i} text={b.text} sources={known} glossary={glossary} resources={lesson.resources} />
           ) : b.kind === "glossary" ? null : (
             <Markdown key={i} text={b.text} sources={known} glossary={glossary} resources={lesson.resources} />
           ),

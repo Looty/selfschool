@@ -1,9 +1,9 @@
 /** Pure helpers for lesson markdown: directive blocks, citations, heading ids. No React, no DOM. */
 
-export type DirectiveName = "low-confidence" | "key-takeaways" | "glossary";
+export type DirectiveName = "low-confidence" | "key-takeaways" | "glossary" | "answer";
 export type Block = { kind: "markdown"; text: string } | { kind: DirectiveName; text: string };
 
-const DIRECTIVES: readonly string[] = ["low-confidence", "key-takeaways", "glossary"];
+const DIRECTIVES: readonly string[] = ["low-confidence", "key-takeaways", "glossary", "answer"];
 const FENCE = /^\s{0,3}(```+|~~~+)/;
 const OPEN = /^:::\s*([a-z][a-z0-9-]*)\s*$/i;
 const CLOSE = /^:::\s*$/;

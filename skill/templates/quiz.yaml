@@ -8,14 +8,17 @@ shuffle: false
 questions:
   - id: q01-1                    # unique across the package, stable (never renumber)
     type: mcq                    # mcq | short | open (more types in question-types.yaml)
-    text: "Which of these is a primary colour in additive (light) mixing?"
+    text: |                      # lesson quizzes: 8 to 12 mcq questions, each ending with a hint that nudges without giving the answer
+      Which of these is a primary colour in additive (light) mixing?
+
+      Hint: think of what a screen is made of, not a paint box.
     # code: |                    # optional: a text block to show with the question (snippet, table, quotation)
     concepts: [colour-mixing, additive-colour]   # quote YAML words that parse as non-strings: "null", "yes", "no", "on", "off"
     sources: [1]                 # optional on mcq/short, required on open
     options:                     # 2 to 4 options, at least one correct, EVERY option has an explanation
       - {text: "Red", correct: true, explanation: "Red, green and blue are the additive primaries; screens mix light from them."}
-      - {text: "Yellow", correct: false, explanation: "Yellow is a primary in subtractive (paint) mixing, not in light."}
-      - {text: "Black", correct: false, explanation: "Black is the absence of light, not a colour of light."}
+      - {text: "Yellow", correct: false, explanation: "Misconception: paint primaries are light primaries. Yellow is a primary in subtractive (paint) mixing, not in light."}
+      - {text: "Black", correct: false, explanation: "Misconception: black is a colour you add. Black is the absence of light."}
   - id: q01-2
     type: short                  # fuzzy-matched locally; list every acceptable phrasing
     text: "What do you call mixing paint pigments, where each added colour absorbs more light?"

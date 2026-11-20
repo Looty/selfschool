@@ -121,8 +121,8 @@ The first paragraph of a lesson is shown as its intro: one or two plain sentence
 
 For each lesson, in this order:
 1. Look at the sources you fetched for it and note the facts you will use.
-2. Write the lesson from `templates/lesson.md`, citing `[n]` after each factual sentence.
-3. Write its quiz from `templates/quiz.yaml` and `templates/question-types.yaml`.
+2. Write the lesson from `templates/lesson.md` following "Teaching method" below, citing `[n]` after each factual sentence.
+3. Write its quiz from `templates/quiz.yaml` (and `templates/question-types.yaml` for any non-`mcq` question), then the lesson's "If you missed a quiz question" section.
 4. Re-read both files against the rules below before moving on.
 
 #### Prerequisites (never use a word before it is taught)
@@ -131,6 +131,65 @@ A learner reads lessons in order and cannot ask. A lesson that leans on an idea 
 - **Order.** Teach an idea before any lesson depends on it. If a chapter must mention something taught later, say so in one sentence at the point of use ("explained in chapter 4; for now, treat it as ...") and keep the dependence shallow.
 - **Primer.** The first lesson of a course for newcomers gets a short "New to <field>? The 60-second version" section (plain markdown, 80 to 150 words) defining the handful of base words the rest of the course uses. A chapter that builds on a different field (for example an LLM chapter in an MLOps course) gets a short "<Topic> basics in plain words" section the same way.
 - **Check.** After drafting a chapter, list every term a newcomer might not know. Each must be defined where first used, covered by the lesson's glossary, or have a forward note.
+
+#### Teaching method (every lesson)
+
+Learners understand faster from many tiny worked examples than from dense explanation. Teach one concept (a function, a command, an idea) at a time, and give every concept the same four-part block, in this order:
+
+1. **Rule.** One plain sentence, built on a concrete mental model, not an abstract one. "`bisect_left(a, x)` is how many items are smaller than `x`" beats "the gap where `x` would go". "An iterator is a conveyor belt: each item comes off once and is gone" beats "lazy evaluation".
+2. **Example ladder.** 3 to 6 examples, tiniest first: inputs of 3 to 6 items, small numbers. Show the state in between, as inline comments or a small table (what is left, the running value). At least one rung is an edge case: empty input, a value larger than everything, ties or duplicates.
+3. **Contrast.** When a neighbouring tool is easy to confuse with this one, put both side by side on the same input, in a small table with the results (for example `product`, `permutations`, `combinations` and `pairwise` on `"abc"`, with counts). Skip this step when there is no confusable neighbour.
+4. **Prediction question.** One question the learner answers by reasoning alone, never "run this". Number it (P1, P2, ...). Put the answer, with a one- or two-line reason, in an `:::answer` block right under the question. The app shows the block closed, behind a "Show answer" button, so the learner commits to an answer before seeing it.
+
+After the last concept, add a `## Cheat sheet` table with the columns tool | one-line rule | tiny example → result.
+
+**Prerequisite detours.** When a concept depends on something a beginner may not know (slicing `[start:stop:step]` before `itertools.islice`, file descriptors before `lsof`), put a short prerequisite section before it, with its own rule, ladder and prediction question. For a topic known to be hard, give two or three different explanations one after another. Example for step slicing: "start, jump, check"; then "keep one, skip the rest"; then "cut into groups of `step` and take the first of each group". The last, most concrete one is usually the one that lands.
+
+**Clarity.**
+- Never name a variable after a data value in the example (not `c = chain("ab", "cd")`; use `belt = chain("ab", "cd")`).
+- Start every example from zero: assume the learner has never used the module.
+- Give a memory hook for confusable names: permutations are positions (race places), combinations are a team, pairwise is neighbours.
+- Use short sentences. Define each piece of jargon in one line where it first appears.
+
+**Pacing.** Prefer more, smaller examples to a denser explanation. If you are unsure whether to move on or add one more tiny example, add the example. Keep a lesson to 2 to 5 concepts; when it needs more, split it into two lessons rather than thinning the ladders.
+
+**Quiz and "If you missed".** Each lesson's quiz is 8 to 12 basic `mcq` questions mixed across the lesson's concepts, each solvable with the rules the lesson taught.
+- Every distractor targets one specific, realistic misconception, for example an off-by-one on an exclusive stop, returning an index instead of a count, forgetting the initial value in `reduce`, mixing up `combinations` and `pairwise`, or believing a cache saves memory. The wrong option's `explanation` names that misconception.
+- Every question ends its `text` with a hint line, `Hint: ...`, that nudges without giving the answer away.
+- Close the lesson, after the cheat sheet and before `:::key-takeaways`, with an `## If you missed a quiz question` section: one short entry per misconception, naming it, the concept section to reread, and one re-check question (R1, R2, ...) followed by its own `:::answer` block.
+
+A worked concept block to imitate (a real lesson also cites its sources with `[n]`):
+
+````markdown
+## bisect_left: counting what is smaller
+
+**Rule:** in a sorted list, `bisect_left(a, x)` is how many items are smaller than `x`.
+
+```python
+from bisect import bisect_left
+nums = [1, 3, 3, 7]
+bisect_left(nums, 0)   # 0: nothing is smaller than 0
+bisect_left(nums, 2)   # 1: only 1 is smaller
+bisect_left(nums, 3)   # 1: the 3s are equal, not smaller
+bisect_left(nums, 5)   # 3: 1, 3 and 3 are smaller
+bisect_left(nums, 9)   # 4: larger than everything gives len(nums)
+bisect_left([], 5)     # 0: an empty list has nothing smaller
+```
+
+**Contrast:** `bisect_right(a, x)` counts the items that are smaller than or equal to `x`.
+
+| Call on `[1, 3, 3, 7]` | Counts | Result |
+| --- | --- | --- |
+| `bisect_left(nums, 3)` | items `< 3` | 1 |
+| `bisect_right(nums, 3)` | items `<= 3` | 3 |
+| right minus left | how many 3s | 2 |
+
+**P1.** What is `bisect_left([2, 4, 4, 4, 8], 4)`?
+
+:::answer
+1: only the 2 is smaller than 4; the equal 4s do not count.
+:::
+````
 
 #### Practical files
 
@@ -150,13 +209,13 @@ Theory-only chapters are fine early, but a course that promises skills needs han
 - **Glossary.** End every lesson, after `:::key-takeaways`, with a `:::glossary` block: one `- **Term**: plain meaning` line per piece of jargon, acronym or tool name the lesson uses (usually 3 to 10). Each meaning is one sentence in everyday words, with no other undefined jargon, and is not a citation target (no `[n]`). Skip terms everyone knows. Repeat a term in a later lesson if it is needed there. The app does not show the block as a list: it underlines the first use of each term in the lesson text with a dotted line and shows the meaning on hover, so write each term the way it appears in the prose ("LLM (large language model)" covers both forms, and "a / b / c" lines with a matching "x / y / z" meaning are split into one entry each). A term that never appears in the prose is listed under a collapsed "More terms" note.
 - **Concepts.** Tag every question with `concepts` (kebab-case, reused consistently); exam domains and regeneration depend on them.
 - **Images** need meaningful alt text; links are relative and must resolve; every file in `resources/` is referenced by some lesson.
-- **Length.** Lessons are 400 to 900 words, with code where relevant. End a quiz with at least one `open` question when the lesson teaches a concept rather than a fact. 3 to 6 questions per quiz.
+- **Length.** A lesson is 2 to 5 concept blocks (see "Teaching method"), usually 700 to 1,400 words counting code. Examples are cheap to read; prose is not. When a lesson grows past that, split it. Quizzes follow "Teaching method": 8 to 12 `mcq` questions per lesson.
 - **Tone.** No marketing, no filler intros, no claims about what the learner "will master".
 - **Exams** are blueprints, not question lists: `duration_minutes`, `max_attempts`, `shuffle`, `limit_questions`, `passing_percentage`, and `domains` with weights summing to 100. Each domain names the `chapters` (and optionally `concepts`) it draws from.
 
 #### Question rules
 
-Match the type to what the lesson teaches, and mix types within a quiz instead of defaulting to multiple choice. Everything except `open` is scored instantly in the app; `open` waits for the AI runner. Examples of every type are in `templates/question-types.yaml`.
+Lesson quizzes are basic `mcq` questions with misconception distractors and hints, as set out in "Teaching method". The other types below are for exams, labs and capstones, and you can add one or two of them to a lesson quiz, after its `mcq` questions, when they fit better: a `trace` for loop state, or a `spot` for a code bug. Everything except `open` is scored instantly in the app; `open` waits for the AI runner. Examples of every type are in `templates/question-types.yaml`.
 
 | Type | Use it for | Avoid it for |
 | --- | --- | --- |
@@ -204,6 +263,8 @@ Run `school validate courses/<id>` and fix every error until it exits clean. Wit
 - [ ] Every image has alt text, every relative link resolves, every `hotspot` image exists
 - [ ] Exam domain weights sum to 100, and each domain's chapters exist
 - [ ] Every lesson ends with a `:::glossary`; no lesson uses a term taught only later without a forward note
+- [ ] Every concept has a rule, an example ladder with an edge case and a prediction question; every prediction and re-check question is followed by its `:::answer` block; the lesson has a `## Cheat sheet` and an `## If you missed a quiz question` section
+- [ ] Every quiz has 8 to 12 `mcq` questions, each ending with a `Hint:` line, and every wrong option's explanation names the misconception it targets
 - [ ] Every lab/capstone lesson lists runnable `resources` that you ran, and says what the learner should see
 
 ### 7. Report
