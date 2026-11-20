@@ -11,9 +11,38 @@ Plain markdown. Every factual claim ends with its source number, e.g. "Red, gree
 Images: `![Describe what the image shows](../resources/diagram.svg)` (alt text is required).
 Code, commands, formulas and data tables go in fenced blocks with a language tag where there is one.
 
-## Section heading
+## Concept name: what it does in a few words
 
-Body text. [1]
+One block per concept (see "Teaching method" in SKILL.md): rule, example ladder, contrast, prediction question.
+
+**Rule:** one plain sentence with a concrete mental model. [1]
+
+```python
+# 3 to 6 tiny examples, smallest first, each with its result and the state in between
+# at least one edge case: empty input, a value larger than everything, ties
+```
+
+**Contrast:** a small table putting this concept next to the neighbour it is confused with, on the same input (skip if there is none).
+
+**P1.** A question answered by reasoning alone. The answer goes in "Answers" below, never here.
+
+## Cheat sheet
+
+| Tool | Rule | Tiny example → result |
+| --- | --- | --- |
+| `name` | one line | `call` → `result` |
+
+## Answers
+
+**P1.** The answer, and why in one or two lines.
+
+**R1.** The answer to re-check question R1 from the table below.
+
+## If you missed a quiz question
+
+| If you thought... | Reread | Re-check |
+| --- | --- | --- |
+| The misconception a distractor targets | The concept section | **R1.** A short question on the same idea |
 
 :::low-confidence
 Use this block when a claim is uncertain, version-dependent or from a weak source. Say what is

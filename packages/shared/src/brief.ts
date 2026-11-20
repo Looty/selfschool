@@ -33,9 +33,30 @@ sources: [101]                # numbers from the extension's sources.md (101 and
 ---
 One or two sentences stating what the learner can do after this lesson.
 
-## Section heading
+## Concept name: what it does in a few words
 
-Every factual claim ends with its source number. [101]
+**Rule:** one plain sentence with a concrete mental model. Every factual claim ends with its source number. [101]
+
+(3 to 6 tiny examples, smallest first, showing the state in between, with at least one edge case.)
+
+**Contrast:** a small table next to the neighbour it is confused with, on the same input.
+
+**P1.** A question answered by reasoning alone; its answer goes in "Answers".
+
+## Cheat sheet
+
+| Tool | Rule | Tiny example → result |
+| --- | --- | --- |
+
+## Answers
+
+**P1.** The answer, and why in one or two lines.
+
+## If you missed a quiz question
+
+| If you thought... | Reread | Re-check |
+| --- | --- | --- |
+| A misconception a distractor targets | The concept section | **R1.** A short question (answered in "Answers") |
 
 :::low-confidence
 Use this block when a claim is uncertain, version-dependent or from a weak source. Say what is
@@ -250,7 +271,7 @@ ${fence("yaml", `schemaVersion: 1\nchapters:\n${plan.chapters.map((c) => `  - di
 
 ## Choosing a question type
 
-Match the type to what the lesson teaches, and mix types within a quiz rather than defaulting to multiple choice. Every type except open-ended is scored instantly in the app.
+Lesson quizzes are mostly basic multiple choice (see "Teaching method"); add one or two of the other types after them where they check the lesson better. Every type except open-ended is scored instantly in the app.
 
 ${typeGuide}
 
@@ -274,7 +295,20 @@ ${typeGuide}
 - **Prerequisites.** Do not rely on an idea the course has not taught yet; if one is unavoidable, add a one-sentence forward note ("explained in a later chapter; for now, treat it as ...").
 - **Glossary.** End every lesson, after \`:::key-takeaways\`, with a \`:::glossary\` block: one \`- **Term**: plain meaning\` line per piece of jargon, acronym or tool name the lesson uses (3 to 10), each one sentence in everyday words with no \`[n]\`.
 - **Concepts.** Tag every question with \`concepts\` (kebab-case, reuse the existing names where they fit).
-- **Length.** Lessons are 400 to 900 words, with code where relevant. Images need meaningful alt text; links are relative and must resolve.
+- **Teaching method.** Teach one concept at a time, 2 to 5 per lesson. Each concept gets four parts, in this order:
+  - a one-sentence **rule** built on a concrete mental model ("\`bisect_left(a, x)\` is how many items are smaller than \`x\`");
+  - an **example ladder** of 3 to 6 tiny examples, smallest first, showing the state in between, with at least one edge case (empty input, a value larger than everything, ties);
+  - a **contrast** table against any easily confused neighbour, on the same input;
+  - a numbered **prediction question** (P1, P2, ...) that the learner answers by reasoning alone.
+
+  Answer every prediction question in an \`## Answers\` section near the end, never under the question. After the concepts add a \`## Cheat sheet\` table (tool | rule | tiny example → result).
+
+  Put a short prerequisite section, in the same format, before any concept that needs something a beginner may lack. Give two or three alternative explanations of a known hard topic. Never name a variable after a data value. Give memory hooks for confusable names, and keep sentences short. When unsure whether to add one more tiny example, add it.
+- **Lesson quizzes.** 8 to 12 basic \`mcq\` questions mixed across the lesson's concepts.
+  - Every distractor targets one named, realistic misconception (an off-by-one on an exclusive stop, an index instead of a count), and its explanation names that misconception.
+  - Every question's \`text\` ends with a \`Hint: ...\` line that nudges without giving the answer away.
+  - Close the lesson, after \`## Answers\`, with an \`## If you missed a quiz question\` table: misconception | concept to reread | one re-check question (answered in \`## Answers\`).
+- **Length.** A lesson is 2 to 5 concept blocks, usually 700 to 1,400 words counting code; split it rather than exceed that. Images need meaningful alt text; links are relative and must resolve.
 - No marketing tone, no filler intros, no claims about what the learner "will master".
 
 ## Templates

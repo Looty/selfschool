@@ -42,12 +42,19 @@ sources (no [n] markers). Put anything uncertain or version-dependent in a :::lo
 uncertain and where to check. Do not repeat the lessons in "existing" or "previous", and do not cover "upcoming" ones;
 build on "previous". The text is shared with other learners, so never mention a learner's scores, weak spots or history.
 "body" is markdown without frontmatter and without a title heading: open with one or two sentences saying what the reader
-can do afterwards, then 2-4 sections under "##" headings, 400 to 700 words in all, code in fenced blocks with a language
-tag, in plain everyday words (define each technical term when first used), and end with a :::key-takeaways block of short
+can do afterwards, then 2-4 concepts, one "##" section each, 600 to 1,000 words in all, code in fenced blocks with a language
+tag, in plain everyday words (define each technical term when first used). Teach each concept in this order:
+- a one-sentence **Rule** built on a concrete mental model;
+- an example ladder of 3-6 tiny examples, smallest first, showing the state in between, with at least one edge case;
+- a small contrast table against any easily confused neighbour;
+- a numbered prediction question (P1, P2, ...) answered by reasoning alone.
+Never name a variable after a data value. After the concepts write a "## Cheat sheet" table (tool | rule | tiny example ->
+result), then "## Answers" with each prediction answer and a one-line reason (never answer under the question). End with a :::key-takeaways block of short
 bullets, then a :::glossary block of "- **Term**: plain meaning" lines for the jargon used (blocks are closed by a line
 containing only :::).
-"questions" are 3 to 4: mostly mcq (2-4 options, at least one correct, EVERY option has an explanation) and one open
-question with a rubric (one checkable criterion per line). Question ids are replaced, so any unique string will do.
+"questions" are 8 basic mcq (2-4 options, at least one correct, EVERY option has an explanation) mixed across the
+concepts. Every wrong option targets one realistic misconception, and its explanation names it. Every question's text
+ends with a line "Hint: ..." that nudges without giving the answer. Question ids are replaced, so any unique string will do.
 Question shapes:
 mcq: {"id","type":"mcq","text","concepts":[kebab-case],"options":[{"text","correct","explanation"}]}
 short: {"id","type":"short","text","concepts":[],"answers":[string]}
